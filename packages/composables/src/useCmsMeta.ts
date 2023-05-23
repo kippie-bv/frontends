@@ -1,26 +1,27 @@
 import { computed, ComputedRef } from "vue";
-import {
-  getTranslatedProperty,
-  getCmsEntityObject,
-} from "@shopware-pwa/helpers-next";
-import type { CmsPageResponse } from "@shopware-pwa/types";
+import { getTranslatedProperty } from "@shopware-pwa/helpers-next";
+import type { CmsPageEntity } from "@shopware-pwa/types";
 
 export type UseCmsMetaReturn = {
+  /**
+   * Meta title for current page/entity
+   */
   title: ComputedRef<string>;
+  /**
+   * Meta tags for current page/entity
+   */
   meta: ComputedRef<{ name: string; content: string }[]>;
 };
 
 /**
  * TODO: remove parameter and use reactive state of cmsResponse provided by useCms composable
  */
-export function useCmsMeta(page: CmsPageResponse): UseCmsMetaReturn {
-  const entityObject = getCmsEntityObject(page);
-
+export function useCmsMeta(entity: CmsPageEntity): UseCmsMetaReturn {
   const meta = computed(() => {
-    let entries = [];
-    const keywords = getTranslatedProperty(entityObject, "keywords");
-    const description = getTranslatedProperty(entityObject, "metaDescription");
-    const title = getTranslatedProperty(entityObject, "metaTitle");
+    const entries = [];
+    const keywords = getTranslatedProperty(entity, "keywords");
+    const description = getTranslatedProperty(entity, "metaDescription");
+    const title = getTranslatedProperty(entity, "metaTitle");
     if (keywords) {
       entries.push({ name: "keywords", content: keywords });
     }
@@ -35,7 +36,7 @@ export function useCmsMeta(page: CmsPageResponse): UseCmsMetaReturn {
   });
 
   return {
-    title: computed(() => getTranslatedProperty(entityObject, "name")),
+    title: computed(() => getTranslatedProperty(entity, "name")),
     meta,
   };
 }

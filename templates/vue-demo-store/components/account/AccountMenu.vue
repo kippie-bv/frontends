@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { SharedModal } from "~~/components/shared/SharedModal.vue";
-const { isLoggedIn, logout, user, refreshUser } = useUser();
+const { isLoggedIn, logout, user } = useUser();
+
+const loginModalController = useModal();
+
 const isAccountMenuOpen = ref(false);
-const modal = inject<SharedModal>("modal") as SharedModal;
 
 async function invokeLogout() {
   await logout();
@@ -10,32 +11,42 @@ async function invokeLogout() {
 }
 </script>
 <template>
-  <div class="flex items-center justify-end md:w-auto">
+  <div class="md:w-auto">
     <div class="my-account-area">
       <div v-show="!isLoggedIn">
         <button
           class="whitespace-nowrap text-base font-medium text-gray-500 hover:text-gray-900"
           data-testid="header-sign-in-link"
-          @click="modal.open('AccountLoginForm')"
+          @click="loginModalController.open"
         >
-          Sign in
+          {{ $t('account.menu.signIn') }}
         </button>
       </div>
+      <SharedModal :controller="loginModalController">
+        <AccountLoginForm
+          @close="loginModalController.close"
+          @success="loginModalController.close"
+        />
+      </SharedModal>
       <div v-if="isLoggedIn">
         <div
-          class="absolute inset-y-2 right-2 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+          class="inset-y-2 flex items-center sm:static sm:inset-auto sm:ml-6 sm:pr-0"
         >
+          <div
+            class="w-7 h-7 i-carbon-user text-gray-600 hover:text-brand-primary sm:hidden hover:text-brand-primary"
+            @click="isAccountMenuOpen = !isAccountMenuOpen"
+          />
           <button
             type="button"
-            class="text-sm text-gray-700 focus:outline-none"
+            class="text-sm text-gray-700 focus:outline-none hidden sm:block"
             data-testid="account-menu-hello-button"
             @click="isAccountMenuOpen = !isAccountMenuOpen"
           >
-            Hello, {{ user?.firstName }}!
+            {{ $t('account.menu.hello') }}, {{ user?.firstName }}!
           </button>
 
           <!-- Profile dropdown -->
-          <div class="ml-3 relative">
+          <div class="relative">
             <div>
               <button
                 id="user-menu-button"
@@ -45,7 +56,7 @@ async function invokeLogout() {
                 aria-haspopup="true"
                 @click="isAccountMenuOpen = !isAccountMenuOpen"
               >
-                <span class="sr-only">Open user menu</span>
+                <span class="sr-only">{{ $t('account.menu.openMenu') }}</span>
               </button>
             </div>
             <Transition
@@ -58,22 +69,21 @@ async function invokeLogout() {
             >
               <div
                 :class="[isAccountMenuOpen ? 'block' : 'hidden']"
-                class="origin-top-right absolute right-0 top-2 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                class="z-20 origin-top-right absolute right-0 top-2 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="user-menu-button"
                 tabindex="-1"
               >
-                <button
+                <NuxtLink
                   id="user-menu-item-1"
+                  to="/account"
                   data-testid="header-my-account-link"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                  role="menuitem"
                   tabindex="-1"
-                  @click="$router.push('/account')"
                 >
-                  My Account
-                </button>
+                  {{ $t('account.menu.myAccount') }}
+                </NuxtLink>
                 <button
                   id="user-menu-item-2"
                   data-testid="header-sing-out-link"
@@ -82,7 +92,7 @@ async function invokeLogout() {
                   tabindex="-2"
                   @click="invokeLogout"
                 >
-                  Sign out
+                 {{ $t('account.menu.signOut') }}
                 </button>
               </div>
             </Transition>

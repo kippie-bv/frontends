@@ -10,9 +10,9 @@ nav:
   hidden: true
 ---
 
-# Why Shopware Frontends
+# Why Shopware Frontends?
 
-Shopware **Frontends** is a framework for building custom, cloud-native Shopware Storefronts.
+Shopware Composable **Frontends** is a framework for building custom, cloud-native Shopware Storefronts.
 
 We observe, that a theme-based approach to customize a Shopware storefront can be limiting. With more customizations, it becomes increasingly hard to maintain and keep in sync with the growing matrix of dependencies like the Shopware Core, the theme, plugins and custom extensions.
 
@@ -29,7 +29,7 @@ Below are some key aspects explanining why Shopware Frontends could be a good fi
 Shopware **Frontends** is built for Shopware 6.
 
 No compromises or generic implementations — it works just like a developer would expect it to.
-Core concepts like [content management](./getting-started/content-pages.md), [cart](./getting-started/cart.md), or [payment](./getting-started/checkout.md) are deeply integrated and fully functional.
+Core concepts like [content management](./getting-started/cms/content-pages.md), [cart](./getting-started/e-commerce/cart.md), or [payment](./getting-started/e-commerce/checkout.md) are deeply integrated and fully functional.
 
 ### Cloud first
 
@@ -54,7 +54,7 @@ This tech-stack is the definition of superior developer experience, quick learni
 ### Flexible
 
 No theming system means no inheritance magic, drastically reduced compatibility issues, update efforts, and restrictions
-to what your site can look like. Build your site in a lego-block-manner by using [prepared templates](./examples/index.md) or just get creative using all perks of [utility-driven CSS](./framework/styling.md).
+to what your site can look like. Build your site in a lego-block-manner by using [prepared templates](./resources/examples/index.md) or just get creative using all perks of [utility-driven CSS](./framework/styling.md).
 
 ## Limitations
 

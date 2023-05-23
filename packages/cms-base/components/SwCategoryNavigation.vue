@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 import {
-  getCategoryUrl,
+  getCategoryRoute,
   getTranslatedProperty,
 } from "@shopware-pwa/helpers-next";
 import { Category, StoreNavigationElement } from "@shopware-pwa/types";
@@ -25,7 +25,7 @@ function getHighlightCategory(navigationElement: Category) {
 }
 </script>
 <template>
-  <ul v-if="props.elements?.length" class="list-none m-0 px-5 space-y-2">
+  <ul v-if="props.elements?.length" class="list-none m-0 px-5">
     <li
       v-for="(navigationElement, index) in props.elements"
       :key="index"
@@ -34,8 +34,8 @@ function getHighlightCategory(navigationElement: Category) {
       }"
     >
       <RouterLink
-        :to="getCategoryUrl(navigationElement)"
-        class="flex items-center py-2 px-5 text-base rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+        :to="getCategoryRoute(navigationElement)"
+        class="flex items-center py-2 px-5 text-base rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 my-2"
         :class="[
           getHighlightCategory(navigationElement) ? 'font-bold' : 'font-normal',
           navigationElement.id === props.activeCategory?.id

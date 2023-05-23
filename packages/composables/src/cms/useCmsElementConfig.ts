@@ -1,6 +1,11 @@
 import { CmsSlot } from "@shopware-pwa/types";
 import { ElementConfig } from "../types";
 
+/**
+ * Composable to get cms element config
+ *
+ * @category CMS (Shopping Experiences)
+ */
 export function useCmsElementConfig<
   T extends CmsSlot & {
     config: T["config"] extends {
@@ -12,8 +17,10 @@ export function useCmsElementConfig<
 >(element: T) {
   const getConfigValue = <ELEMENT_CONFIG extends keyof T["config"]>(
     key: ELEMENT_CONFIG
-  ): typeof element.config[ELEMENT_CONFIG]["value"] => {
-    return element.config[key]?.value;
+  ): (typeof element.config)[ELEMENT_CONFIG]["value"] => {
+    return (
+      element.config[key]?.source !== "mapped" && element.config[key]?.value
+    );
   };
 
   return {

@@ -18,7 +18,11 @@ import { defaultInstance, ShopwareApiInstance } from "../apiService";
 /**
  * Get default amount of products
  *
+ * @param {ShopwareSearchParams} criteria search criteria for products
+ * @param {ShopwareApiInstance} contextInstance instance of the api client (by default it's an Axios instance)
+ *
  * @throws ClientApiError
+ * @category Product
  * @public
  */
 export async function getProducts(
@@ -37,6 +41,7 @@ export async function getProducts(
  * Get default amount of products and listing configuration for given category
  *
  * @throws ClientApiError
+ * @category Product
  * @public
  */
 export async function getCategoryProducts(
@@ -55,6 +60,7 @@ export async function getCategoryProducts(
  * Get the product with passed productId
  *
  * @throws ClientApiError
+ * @category Product
  * @public
  */
 export async function getProduct(
@@ -73,6 +79,7 @@ export async function getProduct(
  * Add a review to specific product by its ID
  *
  * @throws ClientApiError
+ * @category Product
  * @public
  */
 export async function addProductReview(
@@ -94,6 +101,7 @@ export async function addProductReview(
  * Get product reviews
  *
  * @throws ClientApiError
+ * @category Product
  * @public
  */
 export async function getProductReviews(
@@ -107,4 +115,31 @@ export async function getProductReviews(
     ...(criteria || {}),
   });
   return resp.data;
+}
+
+/**
+ * Get matching product variant for given options
+ *
+ * @category Product
+ */
+export async function getProductVariantForOptions(
+  {
+    productId,
+    optionIds,
+    switchedGroup,
+  }: { productId?: string; optionIds?: string[]; switchedGroup?: string },
+  contextInstance: ShopwareApiInstance = defaultInstance
+): Promise<{
+  variantId: string;
+  options: string[];
+}> {
+  const response = await contextInstance.invoke.post<{
+    variantId: string;
+    options: string[];
+  }>(`/store-api/product/${productId}/find-variant`, {
+    options: optionIds,
+    switchedGroup,
+  });
+
+  return response?.data;
 }

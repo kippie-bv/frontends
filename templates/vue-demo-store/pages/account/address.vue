@@ -5,23 +5,24 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { SharedModal } from "~~/components/shared/SharedModal.vue";
 definePageMeta({
   layout: "account",
 });
 const loadingData = ref(true);
-const modal = inject<SharedModal>("modal") as SharedModal;
 const { getCountries } = useCountries();
 const { getSalutations } = useSalutations();
 const { customerAddresses, loadCustomerAddresses } = useAddress();
+const { t } = useI18n()
+
+const addAddressModalController = useModal();
 
 useBreadcrumbs([
   {
-    name: "Account Overview",
+    name: t('breadcrumbs.accountOverview'),
     path: "/account",
   },
   {
-    name: "Address",
+    name: t('breadcrumbs.address'),
     path: "/account/address",
   },
 ]);
@@ -35,10 +36,10 @@ onBeforeMount(async () => {
 <template>
   <div class="container mx-auto my-8">
     <div class="contents text-2xl font-medium text-gray-900">
-      <h1 class="border-b pb-3">Addresses</h1>
+      <h1 class="border-b pb-3">{{ $t('account.addresses') }}</h1>
     </div>
     <p class="text-sm text-gray-500 mt-3">
-      View your current default addresses or add new ones.
+      {{  $t('account.addressesLabel') }}
     </p>
     <div class="grid grid-cols-6 gap-12 mt-8">
       <div v-if="loadingData" class="col-span-6 lg:col-span-3 max-w-md">
@@ -65,14 +66,13 @@ onBeforeMount(async () => {
     <button
       class="group relative justify-center py-2 px-4 my-8 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-light"
       type="submit"
-      @click="
-        modal.open('AccountAddressForm', {
-          countries: getCountries,
-          salutations: getSalutations,
-        })
-      "
+      data-testid="addresses-add-button"
+      @click="addAddressModalController.open"
     >
-      Add new address
+      {{$t('account.addressAddNew')}}
     </button>
+    <SharedModal :controller="addAddressModalController">
+      <AccountAddressForm />
+    </SharedModal>
   </div>
 </template>

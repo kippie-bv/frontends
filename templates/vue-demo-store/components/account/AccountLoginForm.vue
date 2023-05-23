@@ -7,6 +7,8 @@ const emits = defineEmits<{
 }>();
 
 const { isLoggedIn, login } = useUser();
+const { t } = useI18n();
+const { refreshSessionContext } = useSessionContext();
 const { mergeWishlistProducts } = useWishlist();
 const { pushSuccess } = useNotifications();
 const loginErrors = ref<string[]>([]);
@@ -20,9 +22,11 @@ const formData = ref({
 const invokeLogin = async (): Promise<void> => {
   loginErrors.value = [];
   try {
+    // TODO: remove this line once the https://github.com/shopware/frontends/issues/112 issue is fixed
+    await refreshSessionContext();
     await login(formData.value);
     emits("success");
-    pushSuccess("You are logged in");
+    pushSuccess(t("account.messages.loggedInSuccess"));
     emits("close");
     mergeWishlistProducts();
   } catch (error) {
@@ -30,6 +34,9 @@ const invokeLogin = async (): Promise<void> => {
     loginErrors.value = e.messages.map(({ detail }) => detail);
   }
 };
+
+const emailImputElement = ref();
+useFocus(emailImputElement, { initialValue: true });
 </script>
 <template>
   <div
@@ -39,7 +46,7 @@ const invokeLogin = async (): Promise<void> => {
       <div>
         <img class="mx-auto h-12 w-auto" src="/logo.svg" alt="Logo" />
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+          {{ $t("account.signInLabel") }}
         </h2>
       </div>
       <form class="mt-8 space-y-6" @submit.prevent="invokeLogin">
@@ -51,21 +58,26 @@ const invokeLogin = async (): Promise<void> => {
         />
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
-            <label for="email-address" class="sr-only">Email address</label>
+            <label for="email-address" class="sr-only">{{
+              $t("form.email")
+            }}</label>
             <input
               id="email-address"
+              ref="emailImputElement"
               v-model="formData.username"
               name="email"
               type="email"
               autocomplete="email"
               required
               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Email address"
+              :placeholder="$t('form.email')"
               data-testid="login-email-input"
             />
           </div>
           <div>
-            <label for="password" class="sr-only">Password</label>
+            <label for="password" class="sr-only">{{
+              $t("form.password")
+            }}</label>
             <input
               id="password"
               v-model="formData.password"
@@ -74,7 +86,7 @@ const invokeLogin = async (): Promise<void> => {
               autocomplete="current-password"
               required
               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Password"
+              :placeholder="$t('form.password')"
               data-testid="login-password-input"
             />
           </div>
@@ -107,26 +119,31 @@ const invokeLogin = async (): Promise<void> => {
             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
               <div class="w-5 h-5 i-carbon-locked" />
             </span>
-            Sign in
+            {{ $t("account.signIn") }}
           </button>
 
           <slot name="action">
             <div @click="$emit('close')">
-              <nuxt-link
+              <NuxtLink
                 to="/register"
                 class="w-full flex justify-center py-2 px-4 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 data-testid="login-sign-up-link"
               >
-                Sign up
-              </nuxt-link>
+                {{ $t("account.signUp") }}
+              </NuxtLink>
             </div>
           </slot>
         </div>
       </form>
     </div>
     <div v-else>
-      <h2>you are logged in</h2>
-      <button @click="$emit('close')">close</button>
+      <h2>{{ $t("account.loggedInInfo") }}</h2>
+      <button
+        class="group relative w-full flex justify-center py-2 px-4 mb-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        @click="$emit('close')"
+      >
+        close
+      </button>
     </div>
   </div>
 </template>

@@ -11,13 +11,20 @@ import { ClientApiError } from "@shopware-pwa/types";
 
 const { getSalutations } = useSalutations();
 const { getCountries } = useCountries();
-const { register } = useUser();
+const { register, isLoggedIn } = useUser();
 const { pushError } = useNotifications();
 
 const router = useRouter();
 const loading = ref<boolean>();
+const doubleOptInBox = ref();
+const showDoubleOptInBox = ref(false);
+const { t } = useI18n();
+if (process.client && isLoggedIn.value) {
+  // redirect to account page if user is logged in
+  navigateTo({ path: "/account" });
+}
 
-const state = reactive({
+const initialState = {
   salutationId: "",
   firstName: "",
   lastName: "",
@@ -29,7 +36,9 @@ const state = reactive({
     city: "",
     countryId: "",
   },
-});
+};
+
+const state = reactive(JSON.parse(JSON.stringify(initialState)));
 
 const rules = computed(() => ({
   salutationId: {
@@ -77,11 +86,17 @@ const invokeSubmit = async () => {
     try {
       loading.value = true;
       const response = await register(state);
-      if (response) router.push("/");
+      if (response && response.active) router.push("/");
+      else if (response && !response.active) {
+        Object.assign(state, JSON.parse(JSON.stringify(initialState)));
+        showDoubleOptInBox.value = true;
+        await nextTick();
+        doubleOptInBox.value.scrollIntoView();
+        $v.value.$reset();
+      }
     } catch (error) {
       let message =
-        (error as ClientApiError)?.messages?.[0]?.detail ||
-        "Something went wrong, please try again later";
+        (error as ClientApiError)?.messages?.[0]?.detail || t("messages.error");
       pushError(message);
     } finally {
       loading.value = false;
@@ -91,7 +106,7 @@ const invokeSubmit = async () => {
 
 useBreadcrumbs([
   {
-    name: "Register",
+    name: t("breadcrumbs.register"),
     path: "/register",
   },
 ]);
@@ -99,15 +114,24 @@ useBreadcrumbs([
 
 <template>
   <div class="max-w-screen-xl mx-auto px-6 sm:px-4">
+    <div
+      v-if="showDoubleOptInBox"
+      ref="doubleOptInBox"
+      class="bg-green-100 border-t border-b border-green-500 text-green-700 px-4 py-3 mb-4"
+    >
+      {{ $t("account.messages.signUpSuccess") }}
+    </div>
     <form
       class="w-full relative"
       data-testid="registration-form"
       @submit.prevent="invokeSubmit"
     >
-      <h3 class="block border-b-1 mb-5 pb-2 font-bold">I am new here.</h3>
+      <h3 class="block border-b-1 mb-5 pb-2 font-bold">
+        {{ $t("account.signUpHeader") }}
+      </h3>
       <div class="grid grid-cols-12 gap-5 mb-10">
         <div class="col-span-12">
-          <label for="salutation">Salutation *</label>
+          <label for="salutation">{{ $t("form.salutation") }} *</label>
           <select
             id="salutation"
             v-model="state.salutationId"
@@ -122,7 +146,9 @@ useBreadcrumbs([
             data-testid="registration-salutation-select"
             @blur="$v.salutationId.$touch()"
           >
-            <option disabled selected value="">Choose salutation...</option>
+            <option disabled selected value="">
+              {{ $t("form.chooseSalutation") }}
+            </option>
             <option
               v-for="salutation in getSalutations"
               :key="salutation.id"
@@ -140,7 +166,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="first-name">First name *</label>
+          <label for="first-name">{{ $t("form.firstName") }} *</label>
           <input
             id="first-name"
             v-model="state.firstName"
@@ -153,7 +179,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter first name..."
+            :placeholder="$t('form.firstNamePlaceholder')"
             :disabled="loading"
             data-testid="registration-first-name-input"
             @blur="$v.firstName.$touch()"
@@ -167,7 +193,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="last-name">Last name *</label>
+          <label for="last-name">{{ $t("form.lastName") }} *</label>
           <input
             id="last-name"
             v-model="state.lastName"
@@ -180,7 +206,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter last name..."
+            :placeholder="$t('form.lastNamePlaceholder')"
             :disabled="loading"
             data-testid="registration-last-name-input"
             @blur="$v.lastName.$touch()"
@@ -194,7 +220,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-6">
-          <label for="email-address">Email address *</label>
+          <label for="email-address">{{ $t("form.email") }} *</label>
           <input
             id="email-address"
             v-model="state.email"
@@ -207,7 +233,7 @@ useBreadcrumbs([
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
             class="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Enter email address..."
+            :placeholder="$t('form.emailPlaceholder')"
             :disabled="loading"
             data-testid="registration-email-input"
             @blur="$v.email.$touch()"
@@ -221,7 +247,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="password">Password *</label>
+          <label for="password">{{ $t("form.password") }} *</label>
           <input
             id="password"
             v-model="state.password"
@@ -234,7 +260,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter password..."
+            :placeholder="$t('form.passwordPlaceholder')"
             :disabled="loading"
             data-testid="registration-password-input"
             @blur="$v.password.$touch()"
@@ -248,10 +274,12 @@ useBreadcrumbs([
         </div>
       </div>
 
-      <h3 class="block border-b-1 mb-5 pb-2 font-bold">Your address</h3>
+      <h3 class="block border-b-1 mb-5 pb-2 font-bold">
+        {{ $t("account.yourAddress") }}
+      </h3>
       <div class="grid grid-cols-12 gap-5 mb-10">
         <div class="col-span-12 md:col-span-4">
-          <label for="street">Street *</label>
+          <label for="street">{{ $t("form.street") }} *</label>
           <input
             id="Street"
             v-model="state.billingAddress.street"
@@ -264,7 +292,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter street..."
+            :placeholder="$t('form.streetPlaceholder')"
             :disabled="loading"
             data-testid="registration-street-input"
             @blur="$v.billingAddress.street.$touch()"
@@ -278,7 +306,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="zipcode">Zipcode *</label>
+          <label for="zipcode">{{ $t("form.postalCode") }} *</label>
           <input
             id="zipcode"
             v-model="state.billingAddress.zipcode"
@@ -291,7 +319,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter zip code..."
+            :placeholder="$t('form.postalCodePlaceholder')"
             :disabled="loading"
             data-testid="registration-zipcode-input"
             @blur="$v.billingAddress.zipcode.$touch()"
@@ -305,7 +333,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="city">City *</label>
+          <label for="city">{{ $t("form.city") }} *</label>
           <input
             id="city"
             v-model="state.billingAddress.city"
@@ -318,7 +346,7 @@ useBreadcrumbs([
                 ? 'border-red-600 focus:border-red-600'
                 : 'border-gray-300 focus:border-indigo-500',
             ]"
-            placeholder="Enter city..."
+            :placeholder="$t('form.cityPlaceholder')"
             :disabled="loading"
             data-testid="registration-city-input"
             @blur="$v.billingAddress.city.$touch()"
@@ -332,7 +360,7 @@ useBreadcrumbs([
         </div>
 
         <div class="col-span-12 md:col-span-4">
-          <label for="country">Country *</label>
+          <label for="country">{{ $t("form.country") }} *</label>
           <select
             id="country"
             v-model="state.billingAddress.countryId"
@@ -347,7 +375,9 @@ useBreadcrumbs([
             data-testid="registration-country-select"
             @blur="$v.billingAddress.countryId.$touch()"
           >
-            <option disabled selected value="">Choose country...</option>
+            <option disabled selected value="">
+              {{ $t("form.chooseCountry") }}
+            </option>
             <option
               v-for="country in getCountries"
               :key="country.id"
@@ -371,7 +401,7 @@ useBreadcrumbs([
           :disabled="loading"
           data-testid="registration-submit-button"
         >
-          Submit
+          {{ $t("form.submit") }}
         </button>
       </div>
     </form>

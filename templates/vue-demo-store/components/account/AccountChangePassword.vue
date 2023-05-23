@@ -14,6 +14,7 @@ const userErrorMessages = computed(() =>
 );
 
 const isSuccess = ref(false);
+const loadingData = ref(false);
 
 const state = reactive({
   password: {
@@ -44,6 +45,7 @@ const rules = computed(() => ({
 const $v = useVuelidate(rules, state);
 
 const invokeChange = async (): Promise<void> => {
+  loadingData.value = true;
   try {
     const isFormCorrect = await $v.value.$validate();
 
@@ -70,6 +72,8 @@ const invokeChange = async (): Promise<void> => {
     }
   } catch (err) {
     console.error("error change password", err);
+  } finally {
+    loadingData.value = false;
   }
 };
 </script>
@@ -80,19 +84,22 @@ const invokeChange = async (): Promise<void> => {
       class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800"
       role="alert"
     >
-      <span class="font-medium">Your password has been updated.</span>
+      <span class="font-medium">{{ $t('changePassword.messages.passwordUpdateSuccess') }}</span>
     </div>
     <div class="text-sm text-gray-500">
       <div>
-        If you want to change the password to access your account, enter the
-        following information:
+        {{ $t('changePassword.infoBox') }}
       </div>
       <div v-if="state.email">
-        Your current email address is
+        {{  $t('changePassword.currentEmail') }}
         <span class="text-gray-900">{{ state.email }}</span>
       </div>
     </div>
-    <form class="mt-8 space-y-6" @submit.prevent="invokeChange">
+    <form
+      class="mt-8 space-y-6"
+      data-testid="account-change-password-form"
+      @submit.prevent="invokeChange"
+    >
       <div
         v-if="userErrorMessages.length"
         class="text-red-600 focus:ring-brand-primary border-gray-300 rounded"
@@ -105,7 +112,7 @@ const invokeChange = async (): Promise<void> => {
           <label
             for="current-password"
             class="block mb-2 text-sm font-medium text-gray-500 dark:text-white"
-            >Curent password</label
+            >{{$t('changePassword.form.currentPassword')}}</label
           >
           <input
             id="current-password"
@@ -116,6 +123,8 @@ const invokeChange = async (): Promise<void> => {
             required
             class="appearance-none rounded-md shadow-sm relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-brand-primary focus:border-brand-primary focus:z-10 sm:text-sm"
             placeholder="••••••••"
+            data-testid="account-change-current-password-input"
+            :disabled="loadingData"
           />
           <span
             v-if="$v.password.currentPassword.$error"
@@ -128,7 +137,7 @@ const invokeChange = async (): Promise<void> => {
           <label
             for="new-password"
             class="block mb-2 text-sm font-medium text-gray-500 dark:text-white"
-            >New password</label
+            >{{ $t('changePassword.form.newPassword') }}</label
           >
           <input
             id="new-password"
@@ -139,6 +148,8 @@ const invokeChange = async (): Promise<void> => {
             required
             class="appearance-none rounded-md shadow-sm relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-brand-primary focus:border-brand-primary focus:z-10 sm:text-sm"
             placeholder="••••••••"
+            data-testid="account-change-new-password-input"
+            :disabled="loadingData"
           />
           <span
             v-if="$v.password.newPassword.$error"
@@ -151,7 +162,7 @@ const invokeChange = async (): Promise<void> => {
           <label
             for="confirm-password"
             class="block mb-2 text-sm font-medium text-gray-500 dark:text-white"
-            >Repeat password</label
+            >{{ $t('changePassword.form.resetPassword') }}</label
           >
           <input
             id="confirm-password"
@@ -162,6 +173,8 @@ const invokeChange = async (): Promise<void> => {
             required
             class="appearance-none rounded-md shadow-sm relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-brand-primary focus:border-brand-primary focus:z-10 sm:text-sm"
             placeholder="••••••••"
+            data-testid="account-change-confirm-password-input"
+            :disabled="loadingData"
           />
           <span
             v-if="$v.password.newPasswordConfirm.$error"
@@ -176,8 +189,10 @@ const invokeChange = async (): Promise<void> => {
         <button
           class="group relative w-full flex justify-center py-2 px-4 mb-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary"
           type="submit"
+          data-testid="account-change-current-submit-button"
+          :disabled="loadingData"
         >
-          Change password
+         {{ $t('changePassword.form.changePassword') }}
         </button>
       </div>
     </form>

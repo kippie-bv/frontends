@@ -1,9 +1,24 @@
 {
   "name": "@shopware-pwa/api-client",
-  "version": "0.2.2",
+  "version": "0.4.1",
+  "description": "Shopware Store API client",
+  "author": "Shopware",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shopware/frontends.git"
+  },
+  "homepage": "https://frontends.shopware.com/packages/api-client.html",
+  "keywords": [
+    "shopware",
+    "api",
+    "client"
+  ],
+  "bugs": {
+    "url": "https://github.com/shopware/frontends/issues"
+  },
+  "license": "MIT",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "license": "MIT",
   "files": [
     "dist"
   ],
@@ -18,11 +33,12 @@
     "test": "vitest run --segfault-retry=3"
   },
   "devDependencies": {
-    "@faker-js/faker": "^7.6.0",
-    "@vitest/coverage-c8": "^0.28.3",
+    "@faker-js/faker": "^8.0.1",
+    "@vitest/coverage-c8": "^0.31.0",
     "eslint-config-shopware": "workspace:*",
+    "happy-dom": "^9.18.3",
     "tsconfig": "workspace:*",
-    "vitest": "^0.28.3"
+    "vitest": "^0.31.0"
   },
   "dependencies": {
     "@shopware-pwa/types": "workspace:*",

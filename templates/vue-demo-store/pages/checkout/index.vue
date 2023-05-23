@@ -4,7 +4,6 @@ export default {
 };
 </script>
 <script setup lang="ts">
-import { SharedModal } from "~~/components/shared/SharedModal.vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required, email, minLength, requiredIf } from "@vuelidate/validators";
 import { ClientApiError, ShopwareError } from "@shopware-pwa/types";
@@ -16,6 +15,8 @@ definePageMeta({
 const { push } = useRouter();
 const { getCountries } = useCountries();
 const { getSalutations } = useSalutations();
+const { pushInfo } = useNotifications();
+const { t } = useI18n();
 const {
   paymentMethods,
   shippingMethods,
@@ -35,9 +36,9 @@ const {
   activeBillingAddress,
   setActiveBillingAddress,
 } = useSessionContext();
-const { cart, cartItems, subtotal, totalPrice, shippingTotal } = useCart();
+const { cart, cartItems, subtotal, totalPrice, shippingTotal, isVirtualCart } =
+  useCart();
 const { customerAddresses, loadCustomerAddresses } = useAddress();
-const modal = inject<SharedModal>("modal") as SharedModal;
 const isLoading = reactive<{ [key: string]: boolean }>({});
 
 const selectedShippingMethod = computed({
@@ -113,6 +114,13 @@ const state = reactive({
   customShipping: false,
 });
 
+const terms = reactive({
+  tos: false,
+  revocation: false,
+});
+
+const termsBox = ref();
+
 const rules = computed(() => ({
   salutationId: {
     required,
@@ -155,14 +163,26 @@ const rules = computed(() => ({
 const $v = useVuelidate(rules, state);
 
 const placeOrder = async () => {
+  placeOrderTriggered.value = true;
+
+  if (!termsSelected.value) {
+    termsBox.value.scrollIntoView();
+    return;
+  }
+
   isLoading["placeOrder"] = true;
   const order = await createOrder();
   isLoading["placeOrder"] = false;
   return push("/checkout/success/" + order.id);
 };
 
+const termsSelected = computed(() => {
+  return terms.tos && (isVirtualCart.value ? terms.revocation : true);
+});
+const placeOrderTriggered = ref(false);
+
 onMounted(async () => {
-  refreshSessionContext();
+  await refreshSessionContext();
 
   isLoading["shippingAddress"] = true;
   isLoading["shippingMethods"] = true;
@@ -170,7 +190,7 @@ onMounted(async () => {
 
   Promise.any([
     isLoggedIn.value ? loadCustomerAddresses() : null,
-    getShippingMethods(),
+    !isVirtualCart.value ? getShippingMethods() : null,
     getPaymentMethods(),
   ]).finally(() => {
     isLoading["shippingAddress"] = false;
@@ -186,17 +206,37 @@ const invokeSubmit = async () => {
   const valid = await $v.value.$validate();
   if (valid) {
     try {
-      await register(state);
+      const response = await register(state);
+      if (!response.active) {
+        pushInfo(t("checkout.messages.checkoutSignInSuccess"));
+        await push("/");
+      }
     } catch (error) {
       const e = error as ClientApiError;
       registerErrors.value = e.messages;
     }
   }
 };
+async function invokeLogout() {
+  await logout();
+  await push("/");
+}
+
+const loginModalController = useModal();
+const addAddressModalController = useModal();
 </script>
 
 <template>
   <div class="m-10">
+    <SharedModal :controller="loginModalController">
+      <AccountLoginForm
+        @close="loginModalController.close"
+        @success="loginModalController.close"
+      />
+    </SharedModal>
+    <SharedModal :controller="addAddressModalController">
+      <AccountAddressForm />
+    </SharedModal>
     <div
       v-if="isCheckoutAvailable || isCartLoading"
       class="checkout-inner"
@@ -209,10 +249,10 @@ const invokeSubmit = async () => {
           <div class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6 mb-8">
             <div>
               <h3 class="text-lg font-medium text-gray-900 m-0">
-                Personal Information
+                {{ $t("checkout.personalInformationLabel") }}
               </h3>
               <div class="text-sm text-gray-600">
-                Use a permanent address where you can receive mail.
+                {{ $t("checkout.personalInformationInfo") }}
               </div>
             </div>
             <form
@@ -236,23 +276,23 @@ const invokeSubmit = async () => {
                 </ul>
               </div>
               <div class="text-sm">
-                Register or
+                {{ $t("checkout.register") }} {{ $t("checkout.or") }}
                 <a
                   href="#"
                   class="whitespace-nowrap font-medium text-brand-primary hover:text-brand-dark"
                   data-testid="checkout-sign-in-link"
-                  @click="modal.open('AccountLoginForm')"
+                  @click="loginModalController.open"
                 >
-                  Sign in
+                  {{ $t("checkout.signIn") }}
                 </a>
-                <p class="text-gray-500">In order to place an order.</p>
+                <p class="text-gray-500">{{ $t("checkout.signInToOrder") }}</p>
               </div>
               <div class="grid grid-cols-6 gap-6">
                 <div class="col-span-6">
                   <label
                     for="salutation"
                     class="block text-sm font-medium text-gray-700"
-                    >Salutation</label
+                    >{{ $t("form.salutation") }}</label
                   >
                   <select
                     id="salutation"
@@ -265,7 +305,7 @@ const invokeSubmit = async () => {
                     @blur="$v.salutationId.$touch()"
                   >
                     <option disabled selected value="">
-                      Choose salutation...
+                      {{ $t("form.chooseSalutation") }}
                     </option>
                     <option
                       v-for="salutation in getSalutations"
@@ -286,7 +326,7 @@ const invokeSubmit = async () => {
                   <label
                     for="first-name"
                     class="block text-sm font-medium text-gray-700"
-                    >First name</label
+                    >{{ $t("form.firstName") }}</label
                   >
                   <input
                     id="first-name"
@@ -294,7 +334,7 @@ const invokeSubmit = async () => {
                     type="text"
                     required
                     name="first-name"
-                    placeholder="Enter first name..."
+                    :placeholder="$t('form.firstNamePlaceholder')"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-first-name-input"
                     @blur="$v.firstName.$touch()"
@@ -311,7 +351,7 @@ const invokeSubmit = async () => {
                   <label
                     for="last-name"
                     class="block text-sm font-medium text-gray-700"
-                    >Last name</label
+                    >{{ $t("form.lastName") }}</label
                   >
                   <input
                     id="last-name"
@@ -319,7 +359,7 @@ const invokeSubmit = async () => {
                     type="text"
                     required
                     name="last-name"
-                    placeholder="Enter last name..."
+                    :placeholder="$t('form.lastNamePlaceholder')"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-last-name-input"
                     @blur="$v.lastName.$touch()"
@@ -344,7 +384,7 @@ const invokeSubmit = async () => {
                     <label
                       for="create-account"
                       class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Do not create a customer account.</label
+                      >{{ $t("checkout.notCreateAccount") }}</label
                     >
                   </div>
                 </div>
@@ -353,7 +393,7 @@ const invokeSubmit = async () => {
                   <label
                     for="email-address"
                     class="block text-sm font-medium text-gray-700"
-                    >Email address</label
+                    >{{ $t("form.email") }}</label
                   >
                   <input
                     id="email-address"
@@ -361,7 +401,7 @@ const invokeSubmit = async () => {
                     type="email"
                     required
                     name="email-address"
-                    placeholder="Enter email address..."
+                    :placeholder="$t('form.emailPlaceholder')"
                     autocomplete="off"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-email-input"
@@ -379,7 +419,7 @@ const invokeSubmit = async () => {
                     <label
                       for="password"
                       class="block text-sm font-medium text-gray-700"
-                      >Password</label
+                      >{{ $t("form.password") }}</label
                     >
                     <input
                       id="password"
@@ -387,7 +427,7 @@ const invokeSubmit = async () => {
                       autocomplete="off"
                       type="password"
                       name="password"
-                      placeholder="Enter password..."
+                      :placeholder="$t('form.passwordPlaceholder')"
                       class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                       @blur="$v.password.$touch()"
                     />
@@ -404,7 +444,7 @@ const invokeSubmit = async () => {
                   <label
                     for="street-address"
                     class="block text-sm font-medium text-gray-700"
-                    >Street address</label
+                    >{{ $t("form.streetAddress") }}</label
                   >
                   <input
                     id="street-address"
@@ -412,7 +452,7 @@ const invokeSubmit = async () => {
                     type="text"
                     required
                     name="street-address"
-                    placeholder="Enter street..."
+                    :placeholder="$t('form.streetPlaceholder')"
                     autocomplete="street-address"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-street-address-input"
@@ -430,7 +470,7 @@ const invokeSubmit = async () => {
                   <label
                     for="postal-code"
                     class="block text-sm font-medium text-gray-700"
-                    >ZIP / Postal code</label
+                    >{{ $t("form.postalCode") }}</label
                   >
                   <input
                     id="postal-code"
@@ -438,7 +478,7 @@ const invokeSubmit = async () => {
                     type="text"
                     required
                     name="postal-code"
-                    placeholder="Enter zip code..."
+                    :placeholder="$t('form.postalCodePlaceholder')"
                     autocomplete="postal-code"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-zip-code-input"
@@ -456,7 +496,7 @@ const invokeSubmit = async () => {
                   <label
                     for="city"
                     class="block text-sm font-medium text-gray-700"
-                    >City</label
+                    >{{ $t("form.city") }}</label
                   >
                   <input
                     id="city"
@@ -464,7 +504,7 @@ const invokeSubmit = async () => {
                     type="text"
                     required
                     name="city"
-                    placeholder="Enter city..."
+                    :placeholder="$t('form.cityPlaceholder')"
                     autocomplete="address-level2"
                     class="mt-1 block w-full p-2.5 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light"
                     data-testid="checkout-pi-city-input"
@@ -482,7 +522,7 @@ const invokeSubmit = async () => {
                   <label
                     for="country"
                     class="block text-sm font-medium text-gray-700"
-                    >Country</label
+                    >{{ $t("form.country") }}</label
                   >
                   <select
                     id="country"
@@ -495,7 +535,7 @@ const invokeSubmit = async () => {
                     @blur="$v.billingAddress.countryId.$touch()"
                   >
                     <option disabled selected value="">
-                      Choose country...
+                      {{ $t("form.chooseCountry") }}
                     </option>
                     <option
                       v-for="country in getCountries"
@@ -518,31 +558,36 @@ const invokeSubmit = async () => {
                 class="flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 data-testid="checkout-pi-submit-button"
               >
-                Save
+                {{ $t("form.save") }}
               </button>
             </form>
             <div v-else>
-              You are logged-in as {{ user?.firstName }}
+              {{ $t("checkout.loggedInAs") }} {{ user?.firstName }}
               <span
                 v-if="isGuestSession"
                 class="bg-gray-100 text-gray-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
-                >guest</span
-              >! You can log out
+                >{{ $t("checkout.guest") }}</span
+              >! {{ $t("checkout.logOut") }}
               <a
                 href="#"
                 class="text-brand-primary hover:text-brand-dark"
                 data-testid="checkout-logout"
-                @click="logout"
-                >here</a
+                @click="invokeLogout"
+                >{{ $t("checkout.here") }}</a
               >.
             </div>
           </div>
-          <fieldset class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6 mb-8">
+          <fieldset
+            v-if="!isVirtualCart"
+            class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6 mb-8"
+          >
             <legend class="pt-5">
               <h3 class="text-lg font-medium text-gray-900 m-0">
-                Shipping method
+                {{ $t("checkout.shippingMethodLabel") }}
               </h3>
-              <div class="text-sm text-gray-600">Select a payment method.</div>
+              <div class="text-sm text-gray-600">
+                {{ $t("checkout.selectPaymentMethod") }}
+              </div>
             </legend>
             <div v-if="isLoading['shippingMethods']" class="w-60 h-24">
               <div
@@ -559,7 +604,7 @@ const invokeSubmit = async () => {
               v-for="singleShippingMethod in shippingMethods"
               v-else
               :key="singleShippingMethod.id"
-              class="flex items-center"
+              class="flex items-center w-full"
             >
               <input
                 :id="singleShippingMethod.id"
@@ -573,18 +618,36 @@ const invokeSubmit = async () => {
               <label
                 :for="singleShippingMethod.id"
                 :class="{ 'animate-pulse': isLoading[singleShippingMethod.id] }"
-                class="ml-2 block text-sm font-medium text-gray-700"
+                class="ml-2 block text-sm font-medium text-gray-700 w-full"
               >
-                {{ singleShippingMethod.name }}
+                <div class="flex justify-between">
+                  <div>
+                    {{ singleShippingMethod.translated?.name }}
+                    <span
+                      v-if="singleShippingMethod.translated?.description"
+                      class="italic text-sm text-gray-500 block"
+                    >
+                      {{ singleShippingMethod.translated.description }}</span
+                    >
+                  </div>
+                  <div v-if="singleShippingMethod.media?.url">
+                    <img
+                      :src="singleShippingMethod.media.url"
+                      alt="payment-image"
+                    />
+                  </div>
+                </div>
               </label>
             </div>
           </fieldset>
           <fieldset class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6">
             <legend class="pt-5">
               <h3 class="text-lg font-medium text-gray-900 m-0">
-                Payment method
+                {{ $t("checkout.paymentMethodLabel") }}
               </h3>
-              <div class="text-sm text-gray-600">Select a payment method</div>
+              <div class="text-sm text-gray-600">
+                {{ $t("checkout.selectPaymentMethod") }}
+              </div>
             </legend>
             <div v-if="isLoading['paymentMethods']" class="w-60 h-24">
               <div
@@ -617,7 +680,7 @@ const invokeSubmit = async () => {
                 :class="{ 'animate-pulse': isLoading[singlePaymentMethod.id] }"
                 class="ml-2 block text-sm font-medium text-gray-700"
               >
-                {{ singlePaymentMethod.name }}
+                {{ singlePaymentMethod.translated?.name }}
               </label>
             </div>
           </fieldset>
@@ -627,9 +690,11 @@ const invokeSubmit = async () => {
           >
             <legend class="pt-5">
               <h3 class="text-lg font-medium text-gray-900 m-0">
-                Billing Address
+                {{ $t("checkout.billingAddressLabel") }}
               </h3>
-              <div class="text-sm text-gray-600">Select a billing address</div>
+              <div class="text-sm text-gray-600">
+                {{ $t("checkout.selectBillingAddress") }}
+              </div>
             </legend>
             <div v-if="isLoading['paymentMethods']" class="w-60 h-24">
               <div
@@ -674,70 +739,113 @@ const invokeSubmit = async () => {
             <button
               type="button"
               class="flex font-medium text-brand-dark"
-              @click="
-                modal.open('AccountAddressForm', {
-                  countries: getCountries,
-                  salutations: getSalutations,
-                  title: 'Add new billing address',
-                })
-              "
+              @click="addAddressModalController.open"
             >
-              Add new billing address
+              {{ $t("checkout.addNewBillingAddress") }}
             </button>
-            <label for="customShipping" class="field-label">
-              <input
-                id="customShipping"
-                v-model="state.customShipping"
-                name="privacy"
-                type="checkbox"
-                class="mt-1 focus:ring-indigo-500 h-4 w-4 border text-indigo-600 rounded"
-              />
-              Different shipping address
-            </label>
-            <div v-if="state.customShipping">
-              <div
-                v-for="address in customerAddresses"
-                :key="address.id"
-                class="flex mb-3"
-              >
+            <template v-if="!isVirtualCart">
+              <label for="customShipping" class="field-label">
                 <input
-                  :id="`shipping-${address.id}`"
-                  v-model="selectedShippingAddress"
-                  :value="address.id"
-                  name="shipping-address"
-                  type="radio"
-                  class="focus:ring-brand-primary h-4 w-4 border-gray-300"
-                  :data-testid="`checkout-shipping-address-${address.id}`"
+                  id="customShipping"
+                  v-model="state.customShipping"
+                  name="privacy"
+                  type="checkbox"
+                  class="mt-1 focus:ring-indigo-500 h-4 w-4 border text-indigo-600 rounded"
                 />
-                <label
-                  :for="`shipping-${address.id}`"
-                  :class="{
-                    'animate-pulse': isLoading[`shipping-${address.id}`],
-                  }"
-                  class="ml-2 field-label"
+                {{ $t("checkout.differentBillingAddress") }}
+              </label>
+              <div v-if="state.customShipping">
+                <div
+                  v-for="address in customerAddresses"
+                  :key="address.id"
+                  class="flex mb-3"
                 >
-                  <AccountAddressCard
-                    :key="address.id"
-                    :address="address"
-                    :countries="getCountries"
-                    :salutations="getSalutations"
-                    :can-set-default="false"
+                  <input
+                    :id="`shipping-${address.id}`"
+                    v-model="selectedShippingAddress"
+                    :value="address.id"
+                    name="shipping-address"
+                    type="radio"
+                    class="focus:ring-brand-primary h-4 w-4 border-gray-300"
+                    :data-testid="`checkout-shipping-address-${address.id}`"
                   />
-                </label>
+                  <label
+                    :for="`shipping-${address.id}`"
+                    :class="{
+                      'animate-pulse': isLoading[`shipping-${address.id}`],
+                    }"
+                    class="ml-2 field-label"
+                  >
+                    <AccountAddressCard
+                      :key="address.id"
+                      :address="address"
+                      :countries="getCountries"
+                      :salutations="getSalutations"
+                      :can-set-default="false"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="flex font-medium text-brand-dark"
+                  @click="addAddressModalController.open"
+                >
+                  {{ $t("checkout.addNewShippingAddress") }}
+                </button>
               </div>
-              <button
-                type="button"
-                class="flex font-medium text-brand-dark"
-                @click="
-                  modal.open('AccountAddressForm', {
-                    countries: getCountries,
-                    salutations: getSalutations,
-                    title: 'Add new shipping address',
-                  })
-                "
+            </template>
+          </fieldset>
+
+          <fieldset
+            ref="termsBox"
+            class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6"
+            data-testid="checkout-terms-box"
+          >
+            <legend class="pt-5">
+              <h3 class="text-lg font-medium text-gray-900 m-0">
+                {{ $t("checkout.termsAdnConditions") }}
+              </h3>
+            </legend>
+            <div class="flex items-center" data-testid="checkout-t&c-tos">
+              <input
+                id="tos"
+                v-model="terms.tos"
+                :value="terms.tos"
+                name="tos"
+                type="checkbox"
+                class="focus:ring-brand-primary h-4 w-4 border-gray-300 shrink-0"
+                data-testid="checkout-t&c-checkbox-tos"
+              />
+              <label
+                for="tos"
+                class="ml-2 block text-sm font-medium text-gray-700"
+                :class="{ 'text-red': !termsSelected && placeOrderTriggered }"
               >
-                Add new shipping address
-              </button>
+                {{ $t("checkout.termsAdnConditionsLabel") }}
+              </label>
+            </div>
+
+            <div
+              v-if="isVirtualCart"
+              class="flex items-center"
+              data-testid="checkout-t&c-revocation"
+            >
+              <input
+                id="revocation"
+                v-model="terms.revocation"
+                :value="terms.revocation"
+                name="revocation"
+                type="checkbox"
+                class="focus:ring-brand-primary h-4 w-4 border-gray-300 shrink-0"
+                data-testid="checkout-t&c-checkbox-revocation"
+              />
+              <label
+                for="revocation"
+                class="ml-2 block text-sm font-medium text-gray-700"
+                :class="{ 'text-red': !termsSelected && placeOrderTriggered }"
+              >
+                {{ $t("checkout.digitalTerms") }}
+              </label>
             </div>
           </fieldset>
         </div>
@@ -745,9 +853,11 @@ const invokeSubmit = async () => {
           <div class="grid gap-4 shadow px-4 py-5 bg-white sm:p-6">
             <div>
               <h3 class="text-lg font-medium text-gray-900 m-0">
-                Order summary
+                {{ $t("checkout.orderSummary") }}
               </h3>
-              <p class="text-sm text-gray-600">Order details and totals.</p>
+              <p class="text-sm text-gray-600">
+                {{ $t("checkout.orderSummaryLabel") }}
+              </p>
             </div>
             <ul role="list" class="-my-4 divide-y divide-gray-200 pl-0">
               <li
@@ -760,7 +870,7 @@ const invokeSubmit = async () => {
             </ul>
 
             <div class="flex justify-between text-sm text-gray-500">
-              <p>Subtotal</p>
+              <p>{{ $t("checkout.subtotal") }}</p>
               <SharedPrice
                 :value="subtotal"
                 class="text-gray-900 font-medium"
@@ -771,7 +881,7 @@ const invokeSubmit = async () => {
             <div
               class="flex pb-4 border-b justify-between text-sm text-gray-500"
             >
-              <p>Shipping estimate</p>
+              <p>{{ $t("checkout.shippingEstimate") }}</p>
               <SharedPrice
                 :value="shippingTotal"
                 class="text-gray-900 font-medium"
@@ -780,15 +890,15 @@ const invokeSubmit = async () => {
             </div>
 
             <div class="flex justify-between text-gray-900 font-medium">
-              <p>Order total</p>
+              <p>{{ $t("checkout.orderTotal") }}l</p>
               <SharedPrice :value="totalPrice" data-testid="cart-subtotal" />
             </div>
 
             <div class="mt-4">
               <div class="text-right">
-                <span v-if="!isUserSession" class="text-sm text-gray-600"
-                  >You must be logged-in before submitting an order.</span
-                >
+                <span v-if="!isUserSession" class="text-sm text-gray-600">{{
+                  $t("checkout.loginRequired")
+                }}</span>
                 <button
                   :disabled="!isUserSession"
                   type="button"
@@ -802,7 +912,7 @@ const invokeSubmit = async () => {
                   data-testid="checkout-place-order-button"
                   @click="placeOrder"
                 >
-                  Place the order
+                  {{ $t("checkout.placeOrder") }}
                 </button>
               </div>
             </div>
@@ -812,14 +922,14 @@ const invokeSubmit = async () => {
     </div>
     <div v-else class="text-center">
       <h1 class="m-10 text-2xl font-medium text-gray-900">
-        Your cart is empty!
+        {{ $t("cart.emptyCartLabel") }}
       </h1>
       <NuxtLink
         class="inline-flex justify-center py-2 px-4 my-8 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-light"
         to="/"
         data-testid="checkout-go-home-link"
       >
-        Go to home page
+        {{ $t("checkout.goToHomepage") }}
       </NuxtLink>
     </div>
   </div>

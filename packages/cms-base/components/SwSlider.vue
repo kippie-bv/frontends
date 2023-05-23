@@ -42,18 +42,18 @@ const slidesToShow = computed(() =>
     ? childrenRaw.value.length
     : props.slidesToShow
 );
-const children = computed(() => {
+const children = computed<string[]>(() => {
   if (childrenRaw.value.length === 0) return [];
   return [
     ...childrenRaw.value.slice(-slidesToShow.value),
     ...childrenRaw.value,
     ...childrenRaw.value.slice(0, slidesToShow.value),
-  ];
+  ] as string[];
 });
 const emit = defineEmits<{
   (e: "changeSlide", index: number): void;
 }>();
-
+const slider = ref(null);
 const imageSlider = ref<HTMLElement>();
 const imageSliderTrackStyle = ref<any>({});
 const activeSlideIndex = ref<number>(0);
@@ -64,9 +64,17 @@ const isReady = ref<boolean>();
 const isSliding = ref<boolean>();
 
 const { width: imageSliderWidth } = useElementSize(imageSlider);
+let timeoutGuard: ReturnType<typeof setTimeout> | undefined;
 
 onMounted(() => {
   initSlider();
+
+  useResizeObserver(slider, () => {
+    clearTimeout(timeoutGuard);
+    timeoutGuard = setTimeout(() => {
+      buildImageSliderTrackStyle(activeSlideIndex.value);
+    }, 100);
+  });
 });
 
 onBeforeUnmount(() => {
@@ -226,14 +234,19 @@ defineExpose({
 </script>
 <template>
   <div
+    ref="slider"
     :class="{
-      'relative overflow-hidden': true,
+      'relative overflow-hidden h-full': true,
       'px-10': navigationArrowsValue === 'outside',
       'pb-15': navigationDotsValue === 'outside',
       'opacity-0': !isReady,
     }"
   >
-    <div class="overflow-hidden" ref="imageSlider" :style="imageSliderStyle">
+    <div
+      class="overflow-hidden h-full"
+      ref="imageSlider"
+      :style="imageSliderStyle"
+    >
       <div
         ref="imageSliderTrack"
         :class="{
@@ -260,7 +273,7 @@ defineExpose({
             height: displayModeValue === 'standard' ? 'min-content' : '100%',
           }"
         >
-          <component :is="child" />
+          <component :is="child" class="w-[300px]" />
         </div>
       </div>
     </div>

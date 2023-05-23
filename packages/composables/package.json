@@ -1,15 +1,37 @@
 {
   "name": "@shopware-pwa/composables-next",
-  "version": "0.5.0",
+  "version": "0.8.1",
+  "description": "Shopware Frontends composables for Vue",
+  "author": "Shopware",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shopware/frontends.git"
+  },
+  "homepage": "https://frontends.shopware.com/packages/composables.html",
+  "keywords": [
+    "shopware",
+    "vue",
+    "composables"
+  ],
+  "bugs": {
+    "url": "https://github.com/shopware/frontends/issues"
+  },
+  "license": "MIT",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "metadata"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
   "scripts": {
     "build": "unbuild && pnpm build:types",
-    "build:types": "tsc ./src/*.ts --declaration --allowJs --emitDeclarationOnly --outDir ./temp --skipLibCheck",
+    "build:types": "npx -p typescript tsc --project tsconfig.build.json",
     "dev": "unbuild --stub",
     "lint": "eslint src/**/*.ts* --fix --max-warnings=0",
     "test": "vitest run",
@@ -18,19 +40,19 @@
   "dependencies": {
     "@shopware-pwa/api-client": "workspace:*",
     "@shopware-pwa/helpers-next": "workspace:*",
-    "@vueuse/core": "^9.12.0",
+    "@vueuse/core": "^10.1.2",
     "scule": "^1.0.0"
   },
   "devDependencies": {
     "@shopware-pwa/types": "workspace:*",
-    "@vitest/coverage-c8": "^0.28.3",
-    "@vue/test-utils": "^2.2.8",
+    "@vitest/coverage-c8": "^0.31.0",
+    "@vue/test-utils": "^2.3.2",
     "eslint-config-shopware": "workspace:*",
-    "happy-dom": "^8.2.0",
+    "happy-dom": "^9.18.3",
     "tsconfig": "workspace:*",
-    "typescript": "^4.9.4",
-    "unbuild": "^1.1.1",
-    "vitest": "^0.28.3",
-    "vue": "^3.2.45"
+    "typescript": "^5.0.4",
+    "unbuild": "^1.2.1",
+    "vitest": "^0.31.0",
+    "vue": "^3.3.2"
   }
 }

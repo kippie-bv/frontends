@@ -5,8 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-useAuthGuardRedirection();
+const route = useRoute();
+const to = route.query.to as string;
+const params = { to: to };
+
+useAuthGuardRedirection(params);
 
 // Navigation for Account page
 const { loadNavigationElements } = useNavigation();
@@ -35,7 +38,6 @@ provide("swNavigation-footer-navigation", footerData);
 
 <template>
   <div>
-    <SharedModal />
     <LayoutHeader />
     <LayoutNotifications />
     <LayoutBreadcrumbs />
@@ -43,69 +45,66 @@ provide("swNavigation-footer-navigation", footerData);
       <div class="m-10">
         <div class="account-inner">
           <div class="md:grid md:grid-cols-3 md:gap-6">
-            <aside
-              class="hidden md:block lg:w-64 md:col-span-"
-              aria-label="Sidebar"
-            >
+            <aside class="block lg:w-64 md:col-span-" aria-label="Sidebar">
               <div
-                class="overflow-y-auto py-4 px-3 bg-gray-50 text-base font-normal text-gray-500 rounded"
+                class="overflow-y-auto md:py-4 md:px-3 md:bg-gray-50 text-base font-normal text-gray-500 rounded"
               >
                 <h1
-                  class="self-center text-xl p-2 mb-2 font-semibold whitespace-nowrap"
+                  class="self-center text-xl px-0 md:px-2 py-2 mb-2 font-semibold whitespace-nowrap"
                 >
                   My account
                 </h1>
                 <ul class="space-y-2">
                   <li>
-                    <RouterLink
+                    <NuxtLink
                       to="/account"
-                      class="flex items-center p-2 rounded-lg hover:text-brand-primary hover:bg-gray-100 is-active"
+                      class="flex items-center px-0 md:px-2 py-2 rounded-lg hover:text-brand-primary hover:bg-gray-100 is-active"
                     >
                       <div i-carbon-dashboard text-xl inline-block />
                       <span class="ml-3">Account Overview</span>
-                    </RouterLink>
+                    </NuxtLink>
                   </li>
                   <li>
-                    <RouterLink
+                    <NuxtLink
                       to="/account/profile"
-                      class="flex items-center p-2 rounded-lg hover:text-brand-primary hover:bg-gray-100 is-active"
+                      class="flex items-center px-0 md:px-2 py-2 rounded-lg hover:text-brand-primary hover:bg-gray-100 is-active"
                     >
                       <div i-carbon-user text-xl inline-block />
                       <span class="ml-3">My profile</span>
-                    </RouterLink>
+                    </NuxtLink>
                   </li>
                   <li>
-                    <RouterLink
+                    <NuxtLink
                       to="/account/address"
-                      class="flex items-center p-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
+                      class="flex items-center px-0 md:px-2 py-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
                     >
                       <div i-carbon-home text-xl inline-block />
                       <span class="ml-3">My address</span>
-                    </RouterLink>
+                    </NuxtLink>
                   </li>
                   <li>
-                    <RouterLink
+                    <NuxtLink
                       to="/account/payment"
-                      class="flex items-center p-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
+                      class="flex items-center px-0 md:px-2 py-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
                     >
                       <div i-carbon-wallet text-xl inline-block />
                       <span class="ml-3">Payment</span>
-                    </RouterLink>
+                    </NuxtLink>
                   </li>
                 </ul>
                 <ul class="pt-4 mt-4 space-y-2 border-t border-gray-200">
                   <li>
-                    <RouterLink
+                    <NuxtLink
                       to="/account/order"
-                      class="flex items-center p-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
+                      class="flex items-center px-0 md:px-2 py-2 rounded-lg hover:text-brand-primary hover:bg-gray-100"
                     >
                       <div i-carbon-order-details text-xl inline-block />
                       <span class="ml-3">Order history</span>
-                    </RouterLink>
+                    </NuxtLink>
                   </li>
                   <li>
                     <button
-                      class="flex items-center rounded-lg p-2 hover:text-brand-primary hover:bg-gray-100 w-full"
+                      class="flex items-center rounded-lg px-0 md:px-2 py-2 hover:text-brand-primary hover:bg-gray-100 w-full"
                       @click="invokeLogout()"
                     >
                       <div i-carbon-logout text-xl inline-block />
@@ -123,7 +122,6 @@ provide("swNavigation-footer-navigation", footerData);
       </div>
     </div>
 
-    <CheckoutSideCart />
     <LayoutFooter />
   </div>
 </template>

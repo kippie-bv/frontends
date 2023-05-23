@@ -12,15 +12,21 @@ import { useShopwareContext } from "./useShopwareContext";
 import { _useContext } from "./internal/_useContext";
 import { createSharedComposable } from "@vueuse/core";
 
+/**
+ * Composable to manage cart
+ *
+ * @public
+ * @category Cart & Checkout
+ */
 export type UseCartReturn = {
   /**
-   * Adds a product with an optional quantity to the cart
+   * Add product by id and quantity
    */
-  addProduct: (params: { id: string; quantity?: number }) => Promise<Cart>;
+  addProduct(params: { id: string; quantity?: number }): Promise<Cart>;
   /**
    * Adds a promotion code to the cart
    */
-  addPromotionCode: (promotionCode: string) => Promise<void>;
+  addPromotionCode(promotionCode: string): Promise<void>;
   /**
    * Lists all applied and active promotion codes
    */
@@ -36,19 +42,20 @@ export type UseCartReturn = {
   /**
    * Changes the quantity of a product in the cart
    */
-  changeProductQuantity: (params: { id: string; quantity: number }) => void;
+  changeProductQuantity(params: { id: string; quantity: number }): void;
   /**
    * The number of items in the cart
    */
   count: ComputedRef<number>;
   /**
    * Refreshes the cart object and related data
+   * If @param newCart is provided, it will be used as a new cart object
    */
-  refreshCart: () => Promise<Cart>;
+  refreshCart(newCart?: Cart): Promise<Cart>;
   /**
    * Removes the provided LineItem from the cart
    */
-  removeItem: (lineItem: LineItem) => Promise<void>;
+  removeItem(lineItem: LineItem): Promise<void>;
   /**
    * The total price of the cart (including calculated costs like shipping)
    */
@@ -62,7 +69,7 @@ export type UseCartReturn = {
    */
   subtotal: ComputedRef<number>;
   /**
-   * @deprecated - handle errors in your application by checking {cart.errors} object
+   * @deprecated handle errors in your application by checking cart.errors object
    */
   cartErrors: ComputedRef<EntityError[]>;
   /**
@@ -73,19 +80,28 @@ export type UseCartReturn = {
    * `true` if the cart contains no items
    */
   isEmpty: ComputedRef<boolean>;
+  /**
+   * `true` if cart contains only digital items
+   */
+  isVirtualCart: ComputedRef<boolean>;
 };
 
 /**
  * Cart management logic.
  *
- * Used as [Shared](https://shopware-frontends-docs.vercel.app/framework/shared-composables.html) Composable `useCart`
+ * Used as [Shared](https://frontends.shopware.com/framework/shared-composables.html) Composable `useCart`
  */
 export function useCartFunction(): UseCartReturn {
   const { apiInstance } = useShopwareContext();
 
   const _storeCart = _useContext<Cart | undefined>("swCart");
 
-  async function refreshCart(): Promise<Cart> {
+  async function refreshCart(newCart?: Cart): Promise<Cart> {
+    if (newCart) {
+      _storeCart.value = newCart;
+      return newCart;
+    }
+
     const result = await getCart(apiInstance);
     _storeCart.value = result;
     return result;
@@ -219,6 +235,15 @@ export function useCartFunction(): UseCartReturn {
     () => (cart.value?.errors && Object.values(cart.value.errors)) || []
   );
 
+  const isVirtualCart = computed(() => {
+    return (
+      cartItems.value.length > 0 &&
+      cartItems.value
+        .filter((element) => element.type !== "promotion")
+        .every((item) => item.states.includes("is-download"))
+    );
+  });
+
   return {
     addProduct,
     addPromotionCode: submitPromotionCode,
@@ -235,6 +260,7 @@ export function useCartFunction(): UseCartReturn {
     cartErrors,
     getProductItemsSeoUrlsData,
     isEmpty,
+    isVirtualCart,
   };
 }
 

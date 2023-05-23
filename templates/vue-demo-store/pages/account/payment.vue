@@ -21,14 +21,15 @@ const {
 } = useCheckout();
 const { setDefaultPaymentMethod } = useUser();
 const { pushSuccess } = useNotifications();
+const { t } = useI18n();
 
 useBreadcrumbs([
   {
-    name: "Account Overview",
+    name: t('breadcrumbs.accountOverview'),
     path: "/account",
   },
   {
-    name: "Payment",
+    name: t('breadcrumbs.payment'),
     path: "/account/payment",
   },
 ]);
@@ -44,7 +45,7 @@ const invokeSave = async (): Promise<void> => {
     await setPaymentMethod({ id: formData.paymentMethod });
     await setDefaultPaymentMethod(formData.paymentMethod);
     emits("success");
-    pushSuccess("Set default payment method successfully");
+    pushSuccess(t('account.messages.paymentSetSuccessfully'));
   } catch (error) {
     console.error("error set default payment method", error);
   }
@@ -60,12 +61,16 @@ onMounted(async () => {
   <div class="container mx-auto my-8">
     <fieldset class="mt-6">
       <legend class="contents text-2xl font-medium text-gray-900">
-        <h1 class="border-b pb-3">Payment method</h1>
+        <h1 class="border-b pb-3">{{ $t('account.paymentMethodHeader') }}</h1>
       </legend>
       <p class="text-sm text-gray-500 mt-3">
-        Select your default payment method:
+        {{ $t('account.selectDefaultPaymentLabel') }}:
       </p>
-      <form class="mt-4 space-y-6" @submit.prevent="invokeSave">
+      <form
+        class="mt-4 space-y-6"
+        data-testid="account-payment"
+        @submit.prevent="invokeSave"
+      >
         <div v-if="isLoading" class="w-60 h-24">
           <div
             class="flex animate-pulse flex-row items-top pt-4 h-full space-x-5"
@@ -91,19 +96,21 @@ onMounted(async () => {
               name="payment-method"
               type="radio"
               class="focus:ring-brand-light h-4 w-4 text-brand-primary border-gray-300"
+              data-testid="account-payment-checkbox"
             />
             <label
               :for="paymentMethod.id"
               class="ml-3 block text-sm font-medium text-gray-700"
             >
-              {{ paymentMethod.name }}
+              {{ paymentMethod.translated?.name }}
             </label>
           </div>
           <button
             class="group relative justify-center py-2 px-4 my-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-light"
             type="submit"
+            data-testid="account-payment-submit-button"
           >
-            Save
+            {{ $t('account.save') }}
           </button>
         </div>
       </form>

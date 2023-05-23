@@ -7,13 +7,33 @@ import { useLocalWishlist } from "./useLocalWishlist";
 import { useSyncWishlist } from "./useSyncWishlist";
 
 export type UseWishlistReturn = {
-  mergeWishlistProducts: () => void;
-  getWishlistProducts: () => void;
-  clearWishlist: () => void;
+  /**
+   * Merge products with wishlist between async (API) and sync (localstorage) wishlists
+   */
+  mergeWishlistProducts(): void;
+  /**
+   * Get products list added to wishlist
+   */
+  getWishlistProducts(): void;
+  /**
+   * Clear wishlist
+   */
+  clearWishlist(): void;
+  /**
+   * Wishlist items (Product IDs)
+   */
   items: ComputedRef<string[]>;
+  /**
+   * Wishlist items count
+   */
   count: ComputedRef<number>;
 };
 
+/**
+ * Composable to manage wishlist
+ * @public
+ * @category Wishlist
+ */
 export function useWishlist(): UseWishlistReturn {
   const { isLoggedIn, isGuestSession } = useUser();
   const canSyncWishlist = computed(

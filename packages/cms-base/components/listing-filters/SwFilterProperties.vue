@@ -18,14 +18,16 @@ const toggle = () => {
 </script>
 
 <template>
-  <div class="border-b border-gray-200 py-6">
+  <div class="border-b border-gray-200 py-6 px-5">
     <h3 class="-my-3 flow-root">
       <button
         type="button"
         class="flex w-full items-center justify-between bg-white py-2 text-base text-gray-400 hover:text-gray-500"
         @click="toggle"
       >
-        <span class="font-medium text-gray-900">{{ filter.label }}</span>
+        <span class="font-medium text-gray-900 text-left">{{
+          filter.label
+        }}</span>
         <span class="ml-6 flex items-center">
           <i
             :class="[
@@ -38,15 +40,15 @@ const toggle = () => {
       </button>
     </h3>
     <transition name="fade" mode="out-in">
-      <div v-show="isFilterVisible" class="pt-6" id="filter-section-0">
+      <div v-show="isFilterVisible" id="filter-section-0" class="pt-6">
         <div class="space-y-4">
           <div
             v-for="option in filter.options || filter.entities"
             :key="`${option.id}-${selectedOptionIds?.includes(option.id)}`"
+            class="flex items-center"
             @click="
               emits('select-value', { code: filter.code, value: option.id })
             "
-            class="flex items-center"
           >
             <input
               :id="`filter-mobile-${filter.code}-${option.id}`"
@@ -61,7 +63,7 @@ const toggle = () => {
               <img
                 class="ml-2 h-4 w-4"
                 :src="option.media.url"
-                :alt="option.media.translated?.alt"
+                :alt="option.media.translated?.alt || ''"
                 :class="{
                   'border-blue border-2': selectedOptionIds?.includes(
                     option.id
@@ -77,7 +79,7 @@ const toggle = () => {
                 'border-blue border-2': selectedOptionIds?.includes(option.id),
               }"
             />
-            <label for="filter-color-0" class="ml-3 text-sm text-gray-600">
+            <label for="filter-color-0" class="ml-3 text-gray-600">
               {{ getTranslatedProperty(option, "name") }}
             </label>
           </div>

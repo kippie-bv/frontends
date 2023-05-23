@@ -42,14 +42,16 @@ onClickOutside(dropdownElement, () => (isFilterVisible.value = false));
 </script>
 
 <template>
-  <div class="border-b border-gray-200 py-6">
+  <div class="border-b border-gray-200 py-6 px-5">
     <h3 class="-my-3 flow-root">
       <button
         type="button"
         class="flex w-full items-center justify-between bg-white py-2 text-base text-gray-400 hover:text-gray-500"
         @click="toggle"
       >
-        <span class="font-medium text-gray-900">{{ filter.label }}</span>
+        <span class="font-medium text-gray-900 text-left">{{
+          filter.label
+        }}</span>
         <span class="ml-6 flex items-center">
           <i
             :class="[
@@ -62,9 +64,9 @@ onClickOutside(dropdownElement, () => (isFilterVisible.value = false));
       </button>
     </h3>
     <transition name="fade" mode="out-in">
-      <div v-show="isFilterVisible" class="pt-6" id="filter-section-0">
+      <div v-show="isFilterVisible" id="filter-section-0" class="pt-6">
         <div class="space-y-4">
-          <div @click="onChangeOption()" class="flex items-center">
+          <div class="flex items-center" @click="onChangeOption()">
             <input
               :id="`filter-mobile-${filter.id || filter.code}`"
               :checked="currentFilterData"
@@ -76,7 +78,7 @@ onClickOutside(dropdownElement, () => (isFilterVisible.value = false));
 
             <label
               :for="`filter-mobile-${filter.id || filter.code}`"
-              class="ml-3 text-sm text-gray-600"
+              class="ml-3 text-gray-600"
             >
               {{ filter.label }}
             </label>

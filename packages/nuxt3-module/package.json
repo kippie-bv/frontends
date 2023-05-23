@@ -1,10 +1,32 @@
 {
   "name": "@shopware-pwa/nuxt3-module",
-  "version": "0.2.0",
-  "description": "Nuxt3 package for ShopwarePWA",
+  "version": "0.3.3",
+  "description": "Nuxt 3 module for Shopware Frontends",
+  "author": "Shopware",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shopware/frontends.git"
+  },
+  "homepage": "https://frontends.shopware.com/framework/internal-structure.html#nuxt3-module",
+  "keywords": [
+    "Nuxt",
+    "Shopware",
+    "Vue"
+  ],
+  "bugs": {
+    "url": "https://github.com/shopware/frontends/issues"
+  },
+  "license": "MIT",
   "main": "./index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./index.cjs"
+    }
+  },
   "files": [
     "dist",
     "plugin.ts",
@@ -17,30 +39,17 @@
     "test": "echo \"Warn: no test specified yet\""
   },
   "dependencies": {
-    "@nuxt/kit": "^3.1.1",
+    "@nuxt/kit": "^3.5.0",
     "@shopware-pwa/api-client": "workspace:*",
-    "@shopware-pwa/composables-next": "workspace:*"
+    "@shopware-pwa/composables-next": "workspace:*",
+    "js-cookie": "^3.0.5"
   },
   "devDependencies": {
-    "@nuxt/schema": "^3.1.1",
+    "@nuxt/devtools": "^0.4.6",
+    "@nuxt/schema": "^3.5.0",
     "eslint-config-shopware": "workspace:*",
     "tsconfig": "workspace:*",
-    "typescript": "^4.9.4",
-    "unbuild": "^1.1.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/shopware/frontends.git"
-  },
-  "keywords": [
-    "nuxt3",
-    "Shopware",
-    "ShopwarePWA",
-    "Vue"
-  ],
-  "author": "patzick <13100280+patzick@users.noreply.github.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/shopware/frontends/issues"
+    "typescript": "^5.0.4",
+    "unbuild": "^1.2.1"
   }
 }

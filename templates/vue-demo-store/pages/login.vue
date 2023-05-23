@@ -2,11 +2,14 @@
 const { push } = useRouter();
 const { logout, isLoggedIn } = useUser();
 
-const navigateTo = (path = "/") => push(path);
+const redirectAfterLogin = (path = "/account") => push(path);
 
 onBeforeMount(async () => {
-  if (isLoggedIn.value) {
-    await logout();
+  if (process.client && isLoggedIn.value) {
+    // redirect to account page if user is logged in
+    navigateTo({ path: "/account" });
+  } else {
+    await logout(); // if you do a hard reload on the login page, you will be logged out
   }
 });
 
@@ -26,25 +29,25 @@ export default {
 
 <template>
   <div class="login-wrapper">
-    <AccountLoginForm @success="navigateTo('/')">
+    <AccountLoginForm @success="redirectAfterLogin('/account')">
       <div class="flex items-center justify-end">
         <div class="text-sm">
-          <nuxt-link
+          <NuxtLink
             to="/account/recover"
             class="font-medium text-indigo-600 hover:text-indigo-500"
           >
-            Forgot your password?
-          </nuxt-link>
+           {{ $t('recoveryPassword.forgotPassword')}}
+          </NuxtLink>
         </div>
       </div>
 
       <template #action>
-        <nuxt-link
+        <NuxtLink
           to="/register"
           class="w-full flex justify-center py-2 px-4 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          Sign up
-        </nuxt-link>
+          {{ $t('account.signUp')}}
+        </NuxtLink>
       </template>
     </AccountLoginForm>
   </div>

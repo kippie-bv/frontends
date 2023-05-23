@@ -8,6 +8,7 @@ import {
 
 /**
  * More about the navigation parameters: https://docs.shopware.com/en/shopware-platform-dev-en/store-api-guide/navigation?category=shopware-platform-dev-en/store-api-guide
+ * @category Navigation
  * @public
  */
 export interface GetStoreNavigationParams {
@@ -19,7 +20,13 @@ export interface GetStoreNavigationParams {
 }
 
 /**
+ * Get a list of categories by provided search criteria.
+ *
+ * @param {GetStoreNavigationParams} params search criteria for categories
+ * @param {ShopwareApiInstance} contextInstance instance of the api client (by default it's an Axios instance)
+ *
  * @throws ClientApiError
+ * @category Navigation
  * @public
  */
 export async function getStoreNavigation(

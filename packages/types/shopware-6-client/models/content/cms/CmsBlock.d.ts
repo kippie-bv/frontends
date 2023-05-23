@@ -5,14 +5,16 @@ import {
   CmsSlot,
   MobileBehavior,
   SizingMode,
+  CmsVisibility,
 } from "./CmsPage";
+import { CustomFields } from "../../common/CustomField";
 /**
  * @public
  */
 export type CmsBlock = {
   apiAlias: "cms_block";
   createdAt: string;
-  customFields: null | unknown;
+  customFields: CustomFields;
   extensions: unknown;
   id: string;
   locked: true;
@@ -38,4 +40,7 @@ export type CmsBlock = {
   backgroundMedia: Media | null;
   backgroundMediaMode: BackgroundMediaMode;
   cssClass: string | null;
+  visibility: {
+    [key in CmsVisibility]: boolean;
+  };
 };

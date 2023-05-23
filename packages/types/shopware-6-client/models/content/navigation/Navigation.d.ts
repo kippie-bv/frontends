@@ -2,6 +2,7 @@ import { Product } from "../product/Product";
 import { Media } from "../media/Media";
 import { Category } from "../category/Category";
 import { RouteName } from "../cms/CmsPage";
+import { CustomFields } from "../../common/CustomField";
 
 /**
  * Navigation type to display on page.
@@ -28,10 +29,16 @@ export type SeoUrl = {
   isCanonical: boolean;
   isModified: boolean;
   isDeleted: boolean;
+  /**
+   * @deprecated removed from 6.5.0
+   */
   isValid: null | boolean;
   language: null | boolean;
   url: null | string;
-  customFields: null | any;
+  customFields: CustomFields | null;
+  /**
+   * @deprecated removed from 6.5.0
+   */
   error: null | any;
   _uniqueIdentifier: string;
   versionId: null | string;

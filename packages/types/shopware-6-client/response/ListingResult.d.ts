@@ -2,7 +2,9 @@ import { Sort } from "../search/SearchCriteria";
 import {
   Aggregations,
   AggregationFilterEntityOption,
+  AggregationProductListingEntities,
 } from "../search/Aggregations";
+import { CustomFields } from "../models/common/CustomField";
 
 /**
  * @public
@@ -28,11 +30,12 @@ export type ListingFilter = {
   code: ListingFilterCode;
   type?: "range" | "max";
   options?: AggregationFilterEntityOption[];
-  entities?: AggregationFilterEntityOption[];
+  entities?: AggregationProductListingEntities[];
   min?: number; // TODO: prepare proper listing filters based on code
   max?: number;
   value?: string;
   displayType?: ListingFilterDisplayType;
+  customFields?: CustomFields;
 };
 
 export type ListingResult<T> = {

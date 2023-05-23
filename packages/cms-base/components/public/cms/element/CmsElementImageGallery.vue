@@ -142,7 +142,7 @@ function next() {
   >
     <div
       :class="{
-        'basis-20 relative flex flex-col items-center':
+        'hidden lg:flex basis-20 relative flex-col items-center':
           galleryPosition === 'left',
         'flex relative w-full': galleryPosition === 'underneath',
       }"
@@ -183,7 +183,7 @@ function next() {
             :key="image.media.url"
           >
             <div
-              class="h-20 overflow-hidden cursor-pointer p-1 border-gray-200 rounded transition duration-150 ease-in-out"
+              class="w-14 h-20 overflow-hidden cursor-pointer p-1 border-gray-200 rounded transition duration-150 ease-in-out"
               :class="{
                 border: i !== currentIndex,
                 'border-indigo-500 border-3': i === currentIndex,

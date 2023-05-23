@@ -15,11 +15,32 @@ import {
   useListing,
 } from "@shopware-pwa/composables-next";
 import { ShopwareSearchParams } from "@shopware-pwa/types";
+import deepMerge from '../helpers/deepMerge'
+import getTranslations from "../helpers/getTranslations";
 
-defineProps<{
-  content: CmsElementProductListing | CmsElementSidebarFilter;
-  listingType?: string;
-}>();
+const props = 
+  defineProps<{
+    content: CmsElementProductListing | CmsElementSidebarFilter;
+    listingType?: string;
+  }>()
+  
+type Translations = {
+   listing: {
+    sort: string
+    resetFilters: string
+  }
+}
+
+let translations: Translations = {
+   listing: {
+    sort: "Sort",
+    resetFilters: "Reset filters"
+  }
+}
+
+const globalTranslations = getTranslations()
+translations = deepMerge(translations, globalTranslations) as Translations
+
 
 const { category } = useCategory();
 const route = useRoute();
@@ -57,8 +78,10 @@ const sidebarSelectedFilters: UnwrapNestedRefs<{
 const searchCriteriaForRequest: ComputedRef<{
   [code: string]: string | string[] | number | number[] | boolean | undefined;
 }> = computed(() => ({
-  manufacturer: [...sidebarSelectedFilters.manufacturer],
-  properties: [...sidebarSelectedFilters.properties],
+  // turn Set to array and then into string with | separator
+  manufacturer: [...sidebarSelectedFilters.manufacturer]?.join("|"),
+  // turn Set to array and then into string with | separator
+  properties: [...sidebarSelectedFilters.properties]?.join("|"),
   "min-price": sidebarSelectedFilters["min-price"],
   "max-price": sidebarSelectedFilters["max-price"],
   order: getCurrentSortingOrder.value,
@@ -132,7 +155,11 @@ const currentSortingOrder = computed({
         order,
       },
     });
-    changeCurrentSortingOrder(<Partial<ShopwareSearchParams>>route.query);
+
+    changeCurrentSortingOrder(
+      order,
+      <Partial<ShopwareSearchParams>>route.query
+    );
   },
 });
 
@@ -153,9 +180,9 @@ onClickOutside(dropdownElement, () => (isSortMenuOpen.value = false));
 <template>
   <ClientOnly>
     <div class="bg-white">
-      <main class="mx-auto">
+      <main class="mx-auto m-0 px-5">
         <div
-          class="relative flex items-baseline justify-between pt-6 pb-6 border-b border-gray-200"
+          class="relative lg:flex lg:items-baseline lg:justify-between pt-6 pb-6 border-b border-gray-200"
         >
           <div>
             <h1 class="text-4xl font-extrabold tracking-tight text-gray-900">
@@ -174,7 +201,7 @@ onClickOutside(dropdownElement, () => (isSortMenuOpen.value = false));
                   aria-expanded="false"
                   aria-haspopup="true"
                 >
-                  Sort
+                  {{translations.listing.sort }}
                   <div
                     class="i-carbon-chevron-down h-5 w-5 ml-1"
                     :class="{ hidden: isSortMenuOpen }"
@@ -187,7 +214,7 @@ onClickOutside(dropdownElement, () => (isSortMenuOpen.value = false));
               </div>
               <div
                 :class="[isSortMenuOpen ? 'absolute' : 'hidden']"
-                class="origin-top-right right-0 mt-2 w-40 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-1000"
+                class="origin-top-left left-0 lg:origin-top-right lg:right-0 lg:left-auto mt-2 w-40 rounded-md shadow-2xl bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-1000"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="menu-button"
@@ -231,13 +258,13 @@ onClickOutside(dropdownElement, () => (isSortMenuOpen.value = false));
               class="relative"
             />
           </div>
-          <div class="mx-auto mt-4">
+          <div class="mx-auto mt-4 mb-2">
             <button
               class="w-full justify-center py-2 px-6 border border-transparent shadow-sm text-md font-medium rounded-md text-white bg-black hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               @click="invokeCleanFilters"
               type="button"
             >
-              Reset filters<span
+              {{translations.listing.resetFilters}}<span
                 class="w-6 h-6 i-carbon-close-filled inline-block align-middle ml-2"
               ></span>
             </button>
@@ -258,7 +285,7 @@ onClickOutside(dropdownElement, () => (isSortMenuOpen.value = false));
             </div>
 
             <div class="text-sm font-medium text-gray-700 hover:text-gray-900">
-              Sort
+              {{translations.listing.sort}}
             </div>
             <div class="i-carbon-chevron-down h-5 w-5 ml-1"></div>
           </div>

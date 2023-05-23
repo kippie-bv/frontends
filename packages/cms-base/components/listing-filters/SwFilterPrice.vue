@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ListingFilter } from "@shopware-pwa/types";
-import { _debounce } from "@shopware-pwa/helpers-next";
 import { reactive, ref, watch } from "vue";
+import deepMerge from "../../helpers/deepMerge";
+import getTranslations from "../../helpers/getTranslations";
+
 const emits = defineEmits<{
   (e: "select-value", value: { code: string; value: unknown }): void;
 }>();
@@ -9,6 +11,22 @@ const emits = defineEmits<{
 const props = defineProps<{
   filter: ListingFilter;
 }>();
+
+type Translations = {
+  listing: {
+    min: string;
+    max: string;
+  };
+};
+let translations: Translations = {
+  listing: {
+    min: "Min",
+    max: "Max",
+  },
+};
+const globalTranslations = getTranslations();
+translations = deepMerge(translations, globalTranslations) as Translations;
+
 const prices = reactive<{ min: number; max: number }>({
   min: props.filter?.min || 0,
   max: props.filter?.max || 0,
@@ -22,38 +40,38 @@ const toggle = () => {
 const dropdownElement = ref(null);
 onClickOutside(dropdownElement, () => (isFilterVisible.value = false));
 
-watch(
-  () => prices.min,
-  _debounce((newPrice: number, oldPrice: number) => {
-    if (newPrice == oldPrice) return;
-    emits("select-value", {
-      code: "min-price",
-      value: newPrice,
-    });
-  }, 1000)
-);
+function onMinPriceChange(newPrice: number, oldPrice: number) {
+  if (newPrice == oldPrice) return;
+  emits("select-value", {
+    code: "min-price",
+    value: newPrice,
+  });
+}
+const debounceMinPriceUpdate = useDebounceFn(onMinPriceChange, 1000);
+watch(() => prices.min, debounceMinPriceUpdate);
 
-watch(
-  () => prices.max,
-  _debounce((newPrice: number, oldPrice: number) => {
-    if (newPrice == oldPrice) return;
-    emits("select-value", {
-      code: "max-price",
-      value: newPrice,
-    });
-  }, 1000)
-);
+function onMaxPriceChange(newPrice: number, oldPrice: number) {
+  if (newPrice == oldPrice) return;
+  emits("select-value", {
+    code: "max-price",
+    value: newPrice,
+  });
+}
+const debounceMaxPriceUpdate = useDebounceFn(onMaxPriceChange, 1000);
+watch(() => prices.max, debounceMaxPriceUpdate);
 </script>
 
 <template>
-  <div class="border-b border-gray-200 py-6">
+  <div class="border-b border-gray-200 py-6 px-5">
     <h3 class="-my-3 flow-root">
       <button
         type="button"
         class="flex w-full items-center justify-between bg-white py-2 text-base text-gray-400 hover:text-gray-500"
         @click="toggle"
       >
-        <span class="font-medium text-gray-900">{{ filter.label }}</span>
+        <span class="font-medium text-gray-900 text-left">{{
+          filter.label
+        }}</span>
         <span class="ml-6 flex items-center">
           <i
             :class="[
@@ -73,7 +91,7 @@ watch(
             <span
               class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
             >
-              min
+              {{ translations.listing.min }}
             </span>
             <input
               id="min-price"
@@ -88,7 +106,7 @@ watch(
             <span
               class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
             >
-              max
+              {{ translations.listing.max }}
             </span>
             <input
               id="max-price"

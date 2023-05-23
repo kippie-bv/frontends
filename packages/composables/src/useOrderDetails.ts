@@ -6,14 +6,19 @@ import {
   ShippingMethod,
   PaymentMethod,
   ShopwareSearchParams,
+  OrderDocument,
+  ShopwareAssociation,
 } from "@shopware-pwa/types";
 import {
   cancelOrder,
   changeOrderPaymentMethod,
   getOrderDetails,
   handlePayment as apiHandlePayment,
+  getOrderDownloads,
+  getDocumentDownload,
 } from "@shopware-pwa/api-client";
 import { useShopwareContext } from "./useShopwareContext";
+import deepMerge from "./helpers/deepMerge";
 
 /**
  * Data for api requests to fetch all necessary data
@@ -23,6 +28,11 @@ const orderAssociations: ShopwareSearchParams = {
     lineItems: {
       associations: {
         cover: {},
+        downloads: {
+          associations: {
+            media: {},
+          },
+        },
       },
     },
     addresses: {},
@@ -93,34 +103,62 @@ export type UseOrderDetailsReturn = {
    * Get order object including additional associations.
    * useDefaults describes what order object should look like.
    */
-  loadOrderDetails: () => void;
+  loadOrderDetails(): void;
   /**
    * Handle payment for existing error.
    *
    * Pass custom success and error URLs (optionally).
    */
-  handlePayment: (
+  handlePayment(
     successUrl?: string,
     errorUrl?: string,
     paymentDetails?: unknown
-  ) => void;
+  ): void;
   /**
    * Cancel an order.
+   *
    * Action cannot be reverted.
    */
-  cancel: () => Promise<void>;
+  cancel(): Promise<void>;
   /**
    * Changes the payment method for current cart.
    * @param paymentMethodId - ID of the payment method to be set
    * @returns
    */
-  changePaymentMethod: (paymentMethodId: string) => Promise<void>;
+  changePaymentMethod(paymentMethodId: string): Promise<void>;
+  /**
+   * Get media content
+   *
+   * @param {string} downloadId
+   * @returns {Blob}
+   */
+  getMediaFile: (downloadId: string) => Promise<Blob>;
+  /**
+   * Get order documents
+   * @param {string} documentId
+   * @param {string} deepLinkCode
+   * @returns
+   */
+  getDocumentFile: (documentId: string, deepLinkCode: string) => Promise<Blob>;
+  /**
+   * Check if order has documents
+   */
+  hasDocuments: ComputedRef<boolean>;
+  /**
+   * Get order documents
+   */
+  documents: ComputedRef<OrderDocument[]>;
 };
 
 /**
  * Composable for managing an existing order.
+ * @public
+ * @category Customer & Account
  */
-export function useOrderDetails(orderId: string): UseOrderDetailsReturn {
+export function useOrderDetails(
+  orderId: string,
+  associations?: ShopwareAssociation
+): UseOrderDetailsReturn {
   const { apiInstance } = useShopwareContext();
 
   const _sharedOrder = inject("swOrderDetails", ref());
@@ -157,7 +195,7 @@ export function useOrderDetails(orderId: string): UseOrderDetailsReturn {
   async function loadOrderDetails() {
     const orderDetailsResponse = await getOrderDetails(
       orderId,
-      orderAssociations,
+      deepMerge(orderAssociations, associations ? associations : {}),
       apiInstance
     );
     _sharedOrder.value = orderDetailsResponse ?? null;
@@ -191,6 +229,33 @@ export function useOrderDetails(orderId: string): UseOrderDetailsReturn {
     await loadOrderDetails();
   }
 
+  async function getMediaFile(downloadId: string) {
+    const response = await getOrderDownloads(
+      {
+        orderId,
+        downloadId,
+      },
+      apiInstance
+    );
+
+    return response;
+  }
+
+  async function getDocumentFile(documentId: string, deepLinkCode: string) {
+    const response = await getDocumentDownload(
+      {
+        documentId,
+        deepLinkCode,
+      },
+      apiInstance
+    );
+
+    return response;
+  }
+
+  const hasDocuments = computed(() => !!_sharedOrder.value.documents.length);
+  const documents = computed(() => _sharedOrder.value.documents);
+
   return {
     order: computed(() => _sharedOrder.value),
     status,
@@ -203,9 +268,13 @@ export function useOrderDetails(orderId: string): UseOrderDetailsReturn {
     paymentUrl,
     shippingMethod,
     paymentMethod,
+    hasDocuments,
+    documents,
     loadOrderDetails,
     handlePayment,
     cancel,
     changePaymentMethod,
+    getMediaFile,
+    getDocumentFile,
   };
 }

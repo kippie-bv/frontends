@@ -10,6 +10,7 @@ import {
 import { inject, computed, ComputedRef, ref, provide } from "vue";
 import { getListingFilters } from "@shopware-pwa/helpers-next";
 import { useShopwareContext, useCategory } from ".";
+import ContextError from "./helpers/ContextError";
 
 function isObject<T>(item: T): boolean {
   return item && typeof item === "object" && !Array.isArray(item);
@@ -53,34 +54,34 @@ export type UseListingReturn<ELEMENTS_TYPE> = {
    * @param {@link initialListing} - initial listing to set
    * @returns
    */
-  setInitialListing: (
+  setInitialListing(
     initialListing: Partial<ListingResult<ELEMENTS_TYPE>>
-  ) => Promise<void>;
+  ): Promise<void>;
   /**
    * @deprecated - use `search` instead
    * Searches for the listing based on the criteria
    * @param criteria {@link ShopwareSearchParams}
    * @returns
    */
-  initSearch: (
+  initSearch(
     criteria: Partial<ShopwareSearchParams>
-  ) => Promise<ListingResult<ELEMENTS_TYPE>>;
+  ): Promise<ListingResult<ELEMENTS_TYPE>>;
   /**
    * Searches for the listing based on the criteria
    * @param criteria
    * @param options - `options.preventRouteChange` - if true, the route will not be changed
    * @returns
    */
-  search: (
+  search(
     criteria: Partial<ShopwareSearchParams>,
     options?: {
       preventRouteChange?: boolean;
     }
-  ) => Promise<void>;
+  ): Promise<void>;
   /**
    * Loads more (next page) elements to the listing
    */
-  loadMore: () => Promise<void>;
+  loadMore(): Promise<void>;
   /**
    * Listing that is currently set
    */
@@ -102,20 +103,23 @@ export type UseListingReturn<ELEMENTS_TYPE> = {
    * @param order - i.e. "name-asc"
    * @returns
    */
-
-  changeCurrentSortingOrder: (
+  changeCurrentSortingOrder(
+    order: string,
     query?: Partial<ShopwareSearchParams>
-  ) => Promise<void>;
+  ): Promise<void>;
   /**
    * Current page number
    */
-  getCurrentPage: ComputedRef<string | number>;
+  getCurrentPage: ComputedRef<number>;
   /**
    * Changes the current page number
    * @param pageNumber - page number to change to
    * @returns
    */
-  changeCurrentPage: (query?: Partial<ShopwareSearchParams>) => Promise<void>;
+  changeCurrentPage(
+    page: number,
+    query?: Partial<ShopwareSearchParams>
+  ): Promise<void>;
   /**
    * Total number of elements found for the current search criteria
    */
@@ -145,7 +149,7 @@ export type UseListingReturn<ELEMENTS_TYPE> = {
    * @param filters
    * @returns
    */
-  setCurrentFilters: (filters: any) => Promise<void>;
+  setCurrentFilters(filters: any): Promise<void>;
   /**
    * Indicates if the listing is being fetched
    */
@@ -157,13 +161,16 @@ export type UseListingReturn<ELEMENTS_TYPE> = {
   /**
    * Resets the filters - clears the current filters
    */
-  resetFilters: () => Promise<void>;
+  resetFilters(): Promise<void>;
   /**
    * Change selected filters to the query object
    */
-  filtersToQuery: (filters: any) => Record<string, any>;
+  filtersToQuery(filters: any): Record<string, any>;
 };
 
+/**
+ * @public
+ */
 export function useListing(params?: {
   listingType: ListingType;
   categoryId?: string;
@@ -180,8 +187,18 @@ export function useListing(params?: {
       return searchProducts(searchCriteria, apiInstance);
     };
   } else {
-    const { category } = useCategory();
-    const resourceId = category.value?.id || params?.categoryId;
+    let resourceId: undefined | string;
+
+    try {
+      const { category } = useCategory();
+      resourceId = category.value?.id;
+    } catch (error) {
+      if (error instanceof ContextError) {
+        resourceId = params?.categoryId;
+      } else {
+        console.error(error);
+      }
+    }
 
     searchMethod = async (searchCriteria: Partial<ShopwareSearchParams>) => {
       if (!resourceId) {
@@ -201,7 +218,9 @@ export function useListing(params?: {
 }
 
 /**
- * Factory to create your own listing. By default you can use useListing composable, which provides you predefined listings for category(cms) listing and product search listing.
+ * Factory to create your own listing.
+ *
+ * By default you can use useListing composable, which provides you predefined listings for category(cms) listing and product search listing.
  * Using factory you can provide our own compatible search method and use it for example for creating listing of orders in my account.
  *
  * @public
@@ -211,9 +230,9 @@ export function createListingComposable<ELEMENTS_TYPE>({
   searchDefaults,
   listingKey,
 }: {
-  searchMethod: (
+  searchMethod(
     searchParams: Partial<ShopwareSearchParams>
-  ) => Promise<ListingResult<ELEMENTS_TYPE>>;
+  ): Promise<ListingResult<ELEMENTS_TYPE>>;
   searchDefaults: ShopwareSearchParams;
   listingKey: string;
 }): UseListingReturn<ELEMENTS_TYPE> {
@@ -382,14 +401,33 @@ export function createListingComposable<ELEMENTS_TYPE>({
     () => getCurrentListing.value?.sorting
   );
   async function changeCurrentSortingOrder(
+    order: string,
     query?: Partial<ShopwareSearchParams>
   ) {
-    await search(query || {});
+    await search(
+      Object.assign(
+        {
+          order,
+        },
+        query || {}
+      )
+    );
   }
 
   const getCurrentPage = computed(() => getCurrentListing.value?.page || 1);
-  const changeCurrentPage = async (query?: Partial<ShopwareSearchParams>) => {
-    await search(query || {});
+
+  const changeCurrentPage = async (
+    page: number,
+    query?: Partial<ShopwareSearchParams>
+  ) => {
+    await search(
+      Object.assign(
+        {
+          p: page,
+        },
+        query || {}
+      )
+    );
   };
 
   const getInitialFilters = computed(() => {
@@ -404,7 +442,7 @@ export function createListingComposable<ELEMENTS_TYPE>({
   });
 
   const getCurrentFilters = computed(() => {
-    const currentFiltersResult: any = {};
+    const currentFiltersResult: any = [];
     const currentFilters = {
       ...getCurrentListing.value?.currentFilters,
       // ...router.currentRoute.query,

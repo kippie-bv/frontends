@@ -4,26 +4,19 @@ export type UseInternationalizationReturn = {
   /**
    * StorefrontUrl is needed to specify language of emails
    */
-  getStorefrontUrl: () => string;
+  getStorefrontUrl(): string;
 };
 
 /**
- * Composable for internationalization management. Options - {@link UseInternationalizationReturn
+ * Composable for internationalization management.
+ * @public
+ * @category Context & Language
  */
 export function useInternationalization(): UseInternationalizationReturn {
-  /**
-   * Should be removed after resolving backend multi domains problems
-   */
-  const { apiInstance } = useShopwareContext();
+  const { devStorefrontUrl } = useShopwareContext();
 
   function getStorefrontUrl() {
-    /**
-     * apiIntanceUrl - should be removed after resolving backend multi domains problems
-     */
-    const apiIntanceUrl = apiInstance.config.endpoint
-      ? apiInstance.config.endpoint.slice(0, -1)
-      : undefined;
-    return apiIntanceUrl ?? window.location.origin ?? "";
+    return devStorefrontUrl ?? window.location.origin ?? "";
   }
 
   return {

@@ -35,27 +35,28 @@ test.describe.only("Create Order", () => {
   });
 
   test("Create new order", async ({ page }) => {
-    let randomNumber = await getRandomNumber();
     await homePage.clickOnSignIn();
     await homePage.openRegistrationPage();
     await registrationPage.fillCustomerData(
-      "e2e " + faker.name.firstName(),
-      "e2e " + faker.name.lastName(),
+      "e2e " + faker.person.firstName(),
+      "e2e " + faker.person.lastName(),
       faker.internet.exampleEmail(),
       faker.internet.password()
     );
     await registrationPage.fillAddressData(
-      faker.address.street(),
-      faker.address.zipCode(),
-      faker.address.city()
+      faker.location.street(),
+      faker.location.zipCode(),
+      faker.location.city()
     );
     await registrationPage.submitRegistraionForm();
     await homePage.openCartPage();
     await productPage.addToCart();
     await cartPage.openMiniCart();
     await checkoutPage.goToCheckout();
+    await checkoutPage.markTerms();
     await checkoutPage.placeOrder();
-    await expect(page.locator("[data-testid='order-total']")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByTestId("order-total")).toHaveCount(1);
   });
 
   test("Create new order with login on checkout", async ({ page }) => {
@@ -65,9 +66,11 @@ test.describe.only("Create Order", () => {
     await checkoutPage.goToCheckout();
     await checkoutPage.loginOnCheckout();
     await loginform.login(userEmail, password);
-    await checkoutPage.placeOrder();
     await page.waitForLoadState();
-    await expect(page.locator("[data-testid='order-total']")).toBeVisible();
+    await checkoutPage.markTerms();
+    await checkoutPage.placeOrder();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByTestId("order-total")).toHaveCount(1);
   });
 
   test("Create new order as a guest user", async ({ page }) => {
@@ -77,15 +80,16 @@ test.describe.only("Create Order", () => {
     await checkoutPage.goToCheckout();
     await checkoutPage.checkNotCreateAccount();
     await checkoutPage.fillGuestUserData(
-      "e2e " + faker.name.firstName(),
-      "e2e " + faker.name.lastName(),
+      "e2e " + faker.person.firstName(),
+      "e2e " + faker.person.lastName(),
       faker.internet.exampleEmail(),
-      faker.address.street(),
-      faker.address.zipCode(),
-      faker.address.city()
+      faker.location.street(),
+      faker.location.zipCode(),
+      faker.location.city()
     );
+    await checkoutPage.markTerms();
     await checkoutPage.placeOrder();
-    await page.waitForLoadState();
-    await expect(page.locator("[data-testid='order-total']")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByTestId("order-total")).toHaveCount(1);
   });
 });

@@ -27,11 +27,10 @@ const referenceUnitName = computed(
 <template>
   <div v-if="purchaseUnit" class="flex text-gray-500 justify-end gap-1">
     <template v-if="props.showContent">
-      Content: {{ purchaseUnit }} {{ unitName }}
+      {{$t('product.content')}}: {{ purchaseUnit }} {{ unitName }}
     </template>
     <template v-if="referencePrice">
-      (
-      <SharedPrice :value="referencePrice" /> / {{ referenceUnit }}
+      ( <SharedPrice :value="referencePrice" /> / {{ referenceUnit }}
       {{ referenceUnitName }} )
     </template>
   </div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-import { getTranslatedProperty } from "@shopware-pwa/helpers-next";
+import {
+  getTranslatedProperty,
+  getCategoryRoute,
+} from "@shopware-pwa/helpers-next";
 
 const { navigationElements } = useNavigation({ type: "footer-navigation" });
 const gridColumns = computed<number>(() =>
@@ -11,17 +13,17 @@ const gridColumns = computed<number>(() =>
 </script>
 
 <template>
-  <footer class="px-4 sm:px-6">
+  <footer class="px-4 sm:px-6 mt-2 lg:mt-8">
     <menu class="border-t-2 border-gray-100 flex justify-center">
       <div
         class="py-10 w-full max-w-screen-xl"
         :class="`grid grid-cols-2 md:grid-cols-${gridColumns}`"
       >
         <div class="hidden md:block">
-          <RouterLink to="/">
+          <NuxtLink to="/">
             <span class="sr-only">Shopware</span>
             <img class="h-15 w-auto sm:h-15" src="/logo.svg" alt="Logo" />
-          </RouterLink>
+          </NuxtLink>
         </div>
         <div
           v-for="navigationElement in navigationElements"
@@ -37,12 +39,17 @@ const gridColumns = computed<number>(() =>
                 :key="navigationChild.id"
                 class="pb-3 md:pb-1"
               >
-                <RouterLink
-                  :to="'/' + navigationChild.seoUrls[0]?.seoPathInfo"
+                <NuxtLink
+                  :target="
+                    navigationChild.externalLink || navigationChild.linkNewTab
+                      ? '_blank'
+                      : ''
+                  "
+                  :to="getCategoryRoute(navigationChild)"
                   class="text-base font-normal text-gray-500 hover:text-gray-900"
                 >
                   {{ getTranslatedProperty(navigationChild, "name") }}
-                </RouterLink>
+                </NuxtLink>
               </li>
             </ul>
           </template>

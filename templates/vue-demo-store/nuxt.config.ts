@@ -2,10 +2,15 @@ import transformerDirective from "@unocss/transformer-directives";
 
 // https://v3.nuxtjs.org/docs/directory-structure/nuxt.config
 export default defineNuxtConfig({
-  // shopware: {
-  //   shopwareEndpoint: "http://localhost:8000",
-  //   shopwareAccessToken: "your-access-token",
-  // },
+  runtimeConfig: {
+    public: {
+      shopware: {
+        shopwareEndpoint: "https://demo-frontends.shopware.store",
+        shopwareAccessToken: "SWSCBHFSNTVMAWNZDNFKSHLAYW",
+        devStorefrontUrl: "",
+      },
+    },
+  },
   alias: {
     /**
      * TODO: Temp fix until new VueUse published:
@@ -14,15 +19,21 @@ export default defineNuxtConfig({
      */
     useMeta: "~/composables/useMeta",
   },
-  typescript: {
-    typeCheck: true,
-    strict: true,
-  },
+  /**
+   * Commented because of the StackBlitz error
+   * Issue: https://github.com/shopware/frontends/issues/88
+   */
+  // typescript: {
+  //   typeCheck: true,
+  //   strict: true,
+  // },
   modules: [
     "@vueuse/nuxt",
     "@unocss/nuxt",
     "@shopware-pwa/nuxt3-module",
     "@shopware-pwa/cms-base",
+    "@nuxt/devtools",
+    "@nuxtjs/i18n",
   ],
   // components: true,
   components: {
@@ -63,5 +74,16 @@ export default defineNuxtConfig({
     options: {
       linkExactActiveClass: "text-brand-primary",
     },
+  },
+  i18n: {
+    strategy: "no_prefix",
+    langDir: "i18n/src/",
+    locales: [
+      {
+        code: "en-US",
+        iso: "en-US",
+        file: "en-US.ts",
+      },
+    ],
   },
 });

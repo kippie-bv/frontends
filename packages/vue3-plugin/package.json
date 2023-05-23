@@ -1,26 +1,46 @@
 {
   "name": "@shopware-pwa/vue3-plugin",
-  "version": "0.1.25",
+  "version": "0.1.30",
+  "description": "Shopware Fromends Vue3 plugin",
+  "author": "Shopware",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shopware/frontends.git"
+  },
+  "homepage": "https://frontends.shopware.com",
+  "keywords": [
+    "shopware"
+  ],
+  "bugs": {
+    "url": "https://github.com/shopware/frontends/issues"
+  },
+  "license": "MIT",
   "type": "module",
   "module": "./dist/vue3-plugin.es.js",
   "types": "./dist/main.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "import": "./dist/vue3-plugin.es.js"
+    }
+  },
   "scripts": {
     "build": "tsc && vite build"
   },
   "devDependencies": {
-    "typescript": "^4.9.4",
-    "vite": "^4.0.4",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.7",
     "vite-dts": "^1.0.4"
   },
   "dependencies": {
     "@shopware-pwa/api-client": "workspace:*",
     "@shopware-pwa/composables-next": "workspace:*",
-    "js-cookie": "^3.0.1"
+    "js-cookie": "^3.0.5"
   },
   "peerDependencies": {
-    "vue": "^3.2.45"
+    "vue": "^3.3.2"
   }
 }

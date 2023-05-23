@@ -3,18 +3,24 @@ import { LineItem, Product, OrderLineItem } from "@shopware-pwa/types";
 function isProduct(
   object: Product | LineItem | OrderLineItem
 ): object is Product {
-  return object?.apiAlias === "product" || object?.type === "product";
+  return object?.apiAlias === "product";
 }
 
 /**
  * gets the cover image
  *
+ * @param {Product | LineItem | OrderLineItem} object Object containing media object
+ *
  * @public
+ *
+ * @category Product
  */
 export function getMainImageUrl(
-  product: Product | LineItem | OrderLineItem
+  object: Product | LineItem | OrderLineItem
 ): string {
-  return isProduct(product)
-    ? product?.cover?.media?.url || product?.cover?.url || ""
-    : "";
+  if (isProduct(object)) {
+    return object?.cover?.media?.url || object?.media?.[0]?.media.url || "";
+  }
+
+  return object?.cover?.url || "";
 }
